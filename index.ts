@@ -1,13 +1,14 @@
-const http = require('http');
-const mysql = require('mysql');
+import { createServer } from 'http';
+import { createConnection, Connection, MysqlError } from 'mysql';
+
 const host = 'localhost';
 const port = 3000;
 
 
-const server = http.createServer((req, res) => {
+const server = createServer((req, res) => {
     const dbConnection = getDBConnection();
     if (req.url == '/api/locations') {
-        queryToPromise(dbConnection, `SELECT * FROM locations`)
+        queryToPromise(dbConnection, 'SELECT * FROM locations')
             .then((response) => {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.write(JSON.stringify(response));
@@ -30,8 +31,8 @@ server.listen(port, host, () => {
     console.log(`Server running at http://${host}:${port}/`);
 });
 
-function getDBConnection() {
-    const connection = mysql.createConnection({
+function getDBConnection(): Connection {
+    const connection = createConnection({
         host,
         user: 'rdanieldesign',
         password: process.argv[2],
@@ -41,12 +42,12 @@ function getDBConnection() {
     return connection;
 }
 
-function queryToPromise(connection, query) {
+function queryToPromise<T>(connection: Connection, query: string): Promise<T> {
     return new Promise((resolve, reject) => {
-        connection.query(query, function (error, results) {
+        connection.query(query, function (error: MysqlError, results: T) {
             if (error) {
                 reject(error);
-            };
+            }
             resolve(results);
         });
     });
