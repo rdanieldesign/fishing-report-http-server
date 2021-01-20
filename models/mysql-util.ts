@@ -11,8 +11,9 @@ export function getDBConnection(): Connection {
     return connection;
 }
 
-export function queryToPromise<T>(connection: Connection, query: string): Promise<T> {
-    return new Promise((resolve, reject) => {
+export function queryToPromise<T>(query: string): Promise<T> {
+    const connection = getDBConnection();
+    const request = new Promise<T>((resolve, reject) => {
         connection.query(query, function (error: MysqlError, results: T) {
             if (error) {
                 reject(error);
@@ -20,4 +21,6 @@ export function queryToPromise<T>(connection: Connection, query: string): Promis
             resolve(results);
         });
     });
+    connection.end();
+    return request;
 }
