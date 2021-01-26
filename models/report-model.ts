@@ -1,8 +1,26 @@
-import { INewReport, IReport } from '../interfaces/report-interface';
+import { INewReport, IReport, IReportDetails } from '../interfaces/report-interface';
 import { queryToPromise } from './mysql-util';
 
 export function getAllReports(): Promise<IReport[]> {
     return queryToPromise<IReport[]>('SELECT * FROM reports');
+}
+
+export function getAllReportDetails(): Promise<IReportDetails[]> {
+    return queryToPromise<IReportDetails[]>(`
+        SELECT
+            r.locationId,
+            l.name locationName,
+            r.catchCount,
+            r.date,
+            r.notes,
+            r.id
+        FROM
+            reports r
+        INNER JOIN
+            locations l
+        ON
+            r.locationId = l.id;   
+    `);
 }
 
 export function getReportsByLocation(locationId: number): Promise<IReport[]> {

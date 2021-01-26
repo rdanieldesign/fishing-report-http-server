@@ -8,3 +8,8 @@ export interface INewReport {
 export interface IReport extends INewReport {
     id: number;
 }
+
+export interface IReportDetails extends IReport {
+    locationName: string;
+    locationLink: string;
+}

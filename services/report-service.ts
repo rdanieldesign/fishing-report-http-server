@@ -1,5 +1,5 @@
 import { ParsedQs } from 'qs';
-import { INewReport, IReport } from '../interfaces/report-interface';
+import { INewReport, IReport, IReportDetails } from '../interfaces/report-interface';
 import {
     getAllReports as getAllReportsModel,
     getReportsByLocation,
@@ -7,11 +7,15 @@ import {
     updateReport as updateReportModel,
     deleteReport as deleteReportModel,
     getReportById,
+    getAllReportDetails as getAllReportDetailsModel,
 } from '../models/report-model';
 
-export function getReports(queryParams: ParsedQs): Promise<IReport[]> {
+export function getReports(queryParams: ParsedQs): Promise<IReport[] | IReportDetails[]> {
     if (queryParams && queryParams.locationId) {
         return getReportsByLocation(parseInt(queryParams.locationId as string));
+    }
+    if (queryParams && queryParams.details === 'true') {
+        return getAllReportDetailsModel();
     }
     return getAllReportsModel();
 }
