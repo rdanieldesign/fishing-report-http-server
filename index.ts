@@ -2,7 +2,7 @@ import { ServerResponse } from 'http';
 import { addLocation, deleteLocation, getLocation, getLocations, updateLocation } from './services/location-service';
 import express from 'express';
 import { json } from 'body-parser';
-import { addReport, deleteReport, getReports, updateReport } from './services/report-service';
+import { addReport, deleteReport, getReports, updateReport, getReport } from './services/report-service';
 
 const host = 'localhost';
 const port = 3000;
@@ -36,6 +36,10 @@ app.put('/api/locations/:locationId', (req, res) => {
 
 app.get('/api/reports', (req, res) => {
     handleResponse(getReports(req.query), res);
+});
+
+app.get('/api/reports/:reportId', (req, res) => {
+    handleResponse(getReport(req.params.reportId), res);
 });
 
 app.post('/api/reports', (req, res) => {

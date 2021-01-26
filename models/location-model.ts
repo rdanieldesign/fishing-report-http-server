@@ -5,9 +5,10 @@ export function getLocations(): Promise<ILocation[]> {
     return queryToPromise<ILocation[]>('SELECT * FROM locations');
 }
 
-export function getLocation(locationId: number): Promise<ILocation> {
-    return queryToPromise<ILocation>(`SELECT 1 FROM locations
-        WHERE ID = ${locationId};`
+export function getLocation(locationId: number): Promise<ILocation[]> {
+    return queryToPromise<ILocation[]>(`SELECT * FROM locations
+        WHERE ID = ${locationId}
+        LIMIT 1;`
     );
 }
 

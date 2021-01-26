@@ -6,6 +6,7 @@ import {
     addReport as addReportModel,
     updateReport as updateReportModel,
     deleteReport as deleteReportModel,
+    getReportById,
 } from '../models/report-model';
 
 export function getReports(queryParams: ParsedQs): Promise<IReport[]> {
@@ -13,6 +14,17 @@ export function getReports(queryParams: ParsedQs): Promise<IReport[]> {
         return getReportsByLocation(parseInt(queryParams.locationId as string));
     }
     return getAllReportsModel();
+}
+
+export function getReport(reportId: string): Promise<IReport | null> {
+    return getReportById(parseInt(reportId))
+        .then((res: IReport[]): IReport | null => {
+            if (res && res[0]) {
+                return res[0];
+            } else {
+                return null;
+            }
+        });
 }
 
 export function addReport(newReport: INewReport): Promise<IReport> {

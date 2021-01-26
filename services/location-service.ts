@@ -11,8 +11,15 @@ export function getLocations(): Promise<ILocation[]> {
     return getLocationsModel();
 }
 
-export function getLocation(locationId: string): Promise<ILocation> {
-    return getLocationModel(parseInt(locationId));
+export function getLocation(locationId: string): Promise<ILocation | null> {
+    return getLocationModel(parseInt(locationId))
+        .then((res: ILocation[]): ILocation | null => {
+            if (res && res[0]) {
+                return res[0];
+            } else {
+                return null;
+            }
+        });
 }
 
 export function addLocation(newLocation: INewLocation): Promise<ILocation> {

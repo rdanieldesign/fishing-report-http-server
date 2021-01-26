@@ -12,6 +12,13 @@ export function getReportsByLocation(locationId: number): Promise<IReport[]> {
         `);
 }
 
+export function getReportById(reportId: number): Promise<IReport[]> {
+    return queryToPromise<IReport[]>(`SELECT * FROM reports
+        WHERE ID = ${reportId}
+        LIMIT 1;`
+    );
+}
+
 export function addReport(newReport: INewReport): Promise<IReport> {
     return queryToPromise<IReport>(
         `INSERT INTO reports(locationId, date, catchCount, notes) VALUES
