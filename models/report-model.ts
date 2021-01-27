@@ -31,10 +31,24 @@ export function getReportsByLocation(locationId: number): Promise<IReport[]> {
 }
 
 export function getReportById(reportId: number): Promise<IReport[]> {
-    return queryToPromise<IReport[]>(`SELECT * FROM reports
-        WHERE ID = ${reportId}
-        LIMIT 1;`
-    );
+    return queryToPromise<IReport[]>(`
+        SELECT
+            r.locationId,
+            l.name locationName,
+            r.catchCount,
+            r.date,
+            r.notes,
+            r.id
+        FROM
+            reports r
+        INNER JOIN
+            locations l
+        ON
+            r.locationId = l.id
+        WHERE r.id = ${reportId}
+        LIMIT 1
+            ; 
+    `);
 }
 
 export function addReport(newReport: INewReport): Promise<IReport> {
