@@ -42,7 +42,7 @@ export function addReport(newReport: INewReport): Promise<IReport> {
         `INSERT INTO reports(locationId, date, catchCount, notes) VALUES
                 (
                     ${newReport.locationId},
-                    STR_TO_DATE("${newReport.date}",'%Y-%m-%d'),
+                    "${newReport.date}",
                     ${newReport.catchCount},
                     "${newReport.notes}"
                 );`
@@ -54,7 +54,7 @@ export function updateReport(reportId: number, newReport: INewReport): Promise<I
         `UPDATE reports
                 SET
                     locationId = ${newReport.locationId},
-                    date = STR_TO_DATE("${newReport.date}",'%Y-%m-%d'),
+                    date = "${newReport.date}",
                     catchCount = ${newReport.catchCount},
                     notes = "${newReport.notes}"
 
