@@ -3,6 +3,7 @@ import { addLocation, deleteLocation, getLocation, getLocations, updateLocation 
 import express from 'express';
 import { json } from 'body-parser';
 import { addReport, deleteReport, getReports, updateReport, getReport } from './services/report-service';
+import { addUser } from './services/user-service';
 
 const host = 'localhost';
 const port = 3000;
@@ -52,6 +53,12 @@ app.put('/api/reports/:reportId', (req, res) => {
 
 app.delete('/api/reports/:reportId', (req, res) => {
     handleResponse(deleteReport(req.params.reportId), res);
+});
+
+// USERS
+app.post('/api/users', (req, res) => {
+    console.log('here');
+    handleResponse(addUser(req.body), res);
 });
 
 app.listen(port, () => {
