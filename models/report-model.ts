@@ -13,6 +13,7 @@ export function getAllReportDetails(): Promise<IReportDetails[]> {
             r.catchCount,
             r.date,
             r.notes,
+            r.authorId,
             r.id
         FROM
             reports r
@@ -38,6 +39,7 @@ export function getReportById(reportId: number): Promise<IReport[]> {
             r.catchCount,
             r.date,
             r.notes,
+            r.authorId,
             r.id
         FROM
             reports r
@@ -53,12 +55,13 @@ export function getReportById(reportId: number): Promise<IReport[]> {
 
 export function addReport(newReport: INewReport): Promise<IReport> {
     return queryToPromise<IReport>(
-        `INSERT INTO reports(locationId, date, catchCount, notes) VALUES
+        `INSERT INTO reports(locationId, date, catchCount, notes, authorId) VALUES
                 (
                     ${newReport.locationId},
                     "${newReport.date}",
                     ${newReport.catchCount},
-                    "${newReport.notes}"
+                    "${newReport.notes}",
+                    "${newReport.authorId}"
                 );`
     );
 }
@@ -70,7 +73,8 @@ export function updateReport(reportId: number, newReport: INewReport): Promise<I
                     locationId = ${newReport.locationId},
                     date = "${newReport.date}",
                     catchCount = ${newReport.catchCount},
-                    notes = "${newReport.notes}"
+                    notes = "${newReport.notes}",
+                    authorId = "${newReport.authorId}"
 
                 WHERE ID = ${reportId};`
     );
