@@ -1,7 +1,7 @@
 import { SECRET } from '../secret';
 import * as jwt from 'jsonwebtoken';
 import { ICredentials, IDecodedAuthToken, IVerifiedTokenResponse } from '../interfaces/auth-interface';
-import { addUser, getUserByEmail } from './user-service';
+import { addUser, getUserWithPasswordByEmail } from './user-service';
 import * as bcrypt from 'bcrypt';
 import { INewUser, IUser } from '../interfaces/user-interface';
 
@@ -9,7 +9,7 @@ export function verifyToken(token: string): Promise<IVerifiedTokenResponse> {
     return new Promise((resolve, reject) => {
         if (!token) {
             // No token provided
-            reject({ decodedToken: null, status: 403, message: 'No Auth Token' });
+            reject({ decodedToken: null, status: 401, message: 'No Auth Token' });
         }
         jwt.verify(token as string, SECRET, (err, decodedToken) => {
             if (err) {
@@ -26,7 +26,7 @@ export async function login(credentials: ICredentials): Promise<string | null> {
     if (!(credentials && credentials.email && credentials.password)) {
         return Promise.reject(null);
     }
-    const user = await getUserByEmail(credentials.email);
+    const user = await getUserWithPasswordByEmail(credentials.email);
     if (!user) {
         return Promise.reject(null);
     }

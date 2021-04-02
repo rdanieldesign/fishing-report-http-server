@@ -1,4 +1,5 @@
 import { ParsedQs } from 'qs';
+import { IError } from '../interfaces/error-interface';
 import { INewReport, IReport, IReportDetails } from '../interfaces/report-interface';
 import {
     getAllReports as getAllReportsModel,
@@ -9,6 +10,19 @@ import {
     getReportById,
     getAllReportDetails as getAllReportDetailsModel,
 } from '../models/report-model';
+
+async function reportBelongsToUser(reportId: string, userId: number): Promise<boolean> {
+    const report = await getReport(reportId);
+    return Boolean(report && report.authorId === userId);
+}
+
+function sendUnauthorizedMessage(): Promise<IError> {
+    const error: IError = {
+        status: 403,
+        message: 'You are not authorized to delete this record.'
+    };
+    return Promise.reject(error);
+}
 
 export function getReports(queryParams: ParsedQs): Promise<IReport[] | IReportDetails[]> {
     if (queryParams && queryParams.locationId) {
@@ -35,10 +49,20 @@ export function addReport(newReport: INewReport): Promise<IReport> {
     return addReportModel(newReport);
 }
 
-export function updateReport(reportId: string, newReport: INewReport): Promise<IReport> {
-    return updateReportModel(parseInt(reportId), newReport);
+export async function updateReport(reportId: string, newReport: INewReport, userId: number): Promise<IReport | IError> {
+    const userCanDeleteReport = await reportBelongsToUser(reportId, userId);
+    if (userCanDeleteReport) {
+        return updateReportModel(parseInt(reportId), newReport);
+    } else {
+        return sendUnauthorizedMessage();
+    }
 }
 
-export function deleteReport(reportId: string): Promise<void> {
-    return deleteReportModel(parseInt(reportId));
+export async function deleteReport(reportId: string, userId: number): Promise<void | IError> {
+    const userCanDeleteReport = await reportBelongsToUser(reportId, userId);
+    if (userCanDeleteReport) {
+        return deleteReportModel(parseInt(reportId));
+    } else {
+        return sendUnauthorizedMessage();
+    }
 }

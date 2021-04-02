@@ -6,6 +6,8 @@ import { addReport, deleteReport, getReports, updateReport, getReport } from './
 import { login, signUp, verifyToken } from './services/auth-service';
 import { IVerifiedTokenResponse } from './interfaces/auth-interface';
 import { NextFunction, Request } from 'express-serve-static-core';
+import { IError } from './interfaces/error-interface';
+import { getUser } from './services/user-service';
 
 const host = 'localhost';
 const port = 3000;
@@ -49,7 +51,7 @@ app.post(
     '/api/reports',
     [authenticate],
     (req: Request, res: ServerResponse) => {
-        handleResponse(addReport({ ...req.body, authorId: req.body.userId }), res);
+        handleResponse(addReport({ ...req.body, authorId: req.body.authenticatedUserId }), res);
     },
 );
 
@@ -57,7 +59,7 @@ app.put(
     '/api/reports/:reportId',
     [authenticate],
     (req: Request, res: ServerResponse) => {
-        handleResponse(updateReport(req.params.reportId, req.body), res);
+        handleResponse(updateReport(req.params.reportId, req.body, req.body.authenticatedUserId), res);
     },
 );
 
@@ -65,7 +67,16 @@ app.delete(
     '/api/reports/:reportId',
     [authenticate],
     (req: Request, res: ServerResponse) => {
-        handleResponse(deleteReport(req.params.reportId), res);
+        handleResponse(deleteReport(req.params.reportId, req.body.authenticatedUserId), res);
+    }
+);
+
+// USERS
+app.get(
+    '/api/users/current',
+    [authenticate],
+    (req: Request, res: ServerResponse) => {
+        handleResponse(getUser(req.body.authenticatedUserId), res);
     }
 );
 
@@ -91,7 +102,7 @@ async function authenticate(req: Request, res: ServerResponse, next: NextFunctio
         tokenResponse = err;
     }
     if (tokenResponse.status === 200) {
-        req.body.userId = tokenResponse.decodedToken?.userId;
+        req.body = {...req.body, authenticatedUserId: tokenResponse.decodedToken?.userId };
         next();
     } else {
         sendErrorResponse(res, tokenResponse.status, tokenResponse.message);
@@ -104,17 +115,17 @@ function handleResponse<T>(responsePromise: Promise<T>, res: ServerResponse) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.write(JSON.stringify(response));
         })
-        .catch((err: unknown) => {
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.write(JSON.stringify(err));
+        .catch((err: IError) => {
+            const status: number | null = err && err.status ? err.status : null;
+            const message: string | IError = err && err.message ? err.message : JSON.stringify(err);
+            sendErrorResponse(res, status, message);
         })
         .finally(() => {
             res.end();
         });
 }
 
-function sendErrorResponse(res: ServerResponse, status: number, message: string | null) {
-    res.writeHead(status, { 'Content-Type': 'application/json' });
+function sendErrorResponse(res: ServerResponse, status: number | null, message: string | null) {
+    res.writeHead(status || 500, { 'Content-Type': 'application/json' });
     res.write(JSON.stringify(message));
-    res.end();
 }

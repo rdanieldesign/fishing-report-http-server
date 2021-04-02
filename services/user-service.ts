@@ -2,7 +2,7 @@ import { INewUser, IUser } from '../interfaces/user-interface';
 import {
     addUser as addUserModel,
     getUser as getUserModel,
-    getUserByEmail as getUserByEmailModel,
+    getUserWithPasswordByEmail as getUserWithPasswordByEmailModel,
 } from '../models/user-model';
 
 export function addUser(newUser: INewUser): Promise<IUser> {
@@ -16,8 +16,8 @@ export function getUser(userId: string): Promise<IUser | null> {
         });
 }
 
-export function getUserByEmail(email: string): Promise<IUser | null> {
-    return getUserByEmailModel(email)
+export function getUserWithPasswordByEmail(email: string): Promise<IUser | null> {
+    return getUserWithPasswordByEmailModel(email)
         .then((res: IUser[]): IUser | null => {
             return getFirstUser(res);
         });
