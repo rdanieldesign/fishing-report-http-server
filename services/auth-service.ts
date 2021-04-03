@@ -34,9 +34,7 @@ export async function login(credentials: ICredentials): Promise<string | null> {
         credentials.password,
         user.password
     )) {
-        const tokenBody: IDecodedAuthToken = {
-            userId: user.id,
-        };
+        const tokenBody = getTokenBody(user.id);
         return Promise.resolve(jwt.sign(tokenBody, SECRET, {
             expiresIn: 86400 // 24 hours
         }));
@@ -44,9 +42,17 @@ export async function login(credentials: ICredentials): Promise<string | null> {
     return Promise.reject(null);
 }
 
-export async function signUp(newUser: INewUser): Promise<IUser | null> {
-    return addUser({
+export async function signUp(newUser: INewUser): Promise<string | null> {
+    const userId = await addUser({
         ...newUser,
         password: bcrypt.hashSync(newUser.password, 8)
     });
+    const tokenBody = getTokenBody(userId);
+    return Promise.resolve(jwt.sign(tokenBody, SECRET, {
+        expiresIn: 86400 // 24 hours
+    }));
+}
+
+function getTokenBody(userId: number): IDecodedAuthToken {
+    return { userId };
 }

@@ -5,7 +5,7 @@ import {
     getUserWithPasswordByEmail as getUserWithPasswordByEmailModel,
 } from '../models/user-model';
 
-export function addUser(newUser: INewUser): Promise<IUser> {
+export function addUser(newUser: INewUser): Promise<number> {
     return addUserModel(newUser);
 }
 
