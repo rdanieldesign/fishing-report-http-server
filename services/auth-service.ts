@@ -4,6 +4,7 @@ import { ICredentials, IDecodedAuthToken, IVerifiedTokenResponse } from '../inte
 import { addUser, getUserWithPasswordByEmail } from './user-service';
 import * as bcrypt from 'bcrypt';
 import { INewUser, IUser } from '../interfaces/user-interface';
+import { IError } from '../interfaces/error-interface';
 
 export function verifyToken(token: string): Promise<IVerifiedTokenResponse> {
     return new Promise((resolve, reject) => {
@@ -22,13 +23,19 @@ export function verifyToken(token: string): Promise<IVerifiedTokenResponse> {
     });
 }
 
-export async function login(credentials: ICredentials): Promise<string | null> {
+export async function login(credentials: ICredentials): Promise<string | IError> {
     if (!(credentials && credentials.email && credentials.password)) {
-        return Promise.reject(null);
+        return Promise.reject({
+            message: 'Something went wrong.',
+            status: 500,
+        });
     }
     const user = await getUserWithPasswordByEmail(credentials.email);
     if (!user) {
-        return Promise.reject(null);
+        return Promise.reject({
+            message: 'Could not log in.',
+            status: 400,
+        });
     }
     if (bcrypt.compareSync(
         credentials.password,
@@ -39,7 +46,10 @@ export async function login(credentials: ICredentials): Promise<string | null> {
             expiresIn: 86400 // 24 hours
         }));
     }
-    return Promise.reject(null);
+    return Promise.reject({
+        message: 'Something went wrong.',
+        status: 500,
+    });
 }
 
 export async function signUp(newUser: INewUser): Promise<string | null> {
