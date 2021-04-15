@@ -53,6 +53,13 @@ export async function login(credentials: ICredentials): Promise<string | IError>
 }
 
 export async function signUp(newUser: INewUser): Promise<string | null> {
+    const user = await getUserWithPasswordByEmail(newUser.email);
+    if (user) {
+        return Promise.reject({
+            message: 'This email already exists in the system.',
+            status: 400,
+        });
+    }
     const userId = await addUser({
         ...newUser,
         password: bcrypt.hashSync(newUser.password, 8)

@@ -47,6 +47,14 @@ app.get('/api/reports/:reportId', (req: Request, res: ServerResponse) => {
     handleResponse(getReport(req.params.reportId), res);
 });
 
+app.get(
+    '/api/reports/my-reports',
+    [authenticate],
+    (req: Request, res: ServerResponse) => {
+        handleResponse(getReports({...req.params, authorId: req.body.authenticatedUserId}), res);
+    }
+);
+
 app.post(
     '/api/reports',
     [authenticate],

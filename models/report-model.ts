@@ -1,52 +1,44 @@
 import { INewReport, IReport, IReportDetails } from '../interfaces/report-interface';
 import { queryToPromise } from './mysql-util';
 
-export function getAllReports(): Promise<IReport[]> {
-    return queryToPromise<IReport[]>('SELECT * FROM reports');
-}
+const reportDetailsQuery = `
+    SELECT
+        r.locationId,
+        l.name locationName,
+        r.catchCount,
+        r.date,
+        r.notes,
+        r.authorId,
+        r.id
+    FROM
+        reports r
+    INNER JOIN
+        locations l
+    ON
+        r.locationId = l.id
+`;
 
-export function getAllReportDetails(): Promise<IReportDetails[]> {
-    return queryToPromise<IReportDetails[]>(`
-        SELECT
-            r.locationId,
-            l.name locationName,
-            r.catchCount,
-            r.date,
-            r.notes,
-            r.authorId,
-            r.id
-        FROM
-            reports r
-        INNER JOIN
-            locations l
-        ON
-            r.locationId = l.id;   
+const reportQuery = 'SELECT * FROM reports';
+
+export function getReports(params: Partial<IReport>, showDetails: boolean): Promise<IReport[] | IReportDetails[]> {
+    const queryCriteria = Object.keys(params).reduce((criteria, key) => {
+        if (criteria) {
+            criteria += ' AND ';
+        }
+        return criteria += `${key} = ${params[key as keyof IReport]}`;
+
+    }, '');
+    return queryToPromise<IReport[] | IReportDetails[]>(`
+        ${showDetails ? reportDetailsQuery : reportQuery}
+        ${queryCriteria ? 'WHERE' : ''}
+        ${queryCriteria}
+        ;
     `);
-}
-
-export function getReportsByLocation(locationId: number): Promise<IReport[]> {
-    return queryToPromise<IReport[]>(`
-            SELECT * FROM reports
-                WHERE locationId = ${locationId};
-        `);
 }
 
 export function getReportById(reportId: number): Promise<IReport[]> {
     return queryToPromise<IReport[]>(`
-        SELECT
-            r.locationId,
-            l.name locationName,
-            r.catchCount,
-            r.date,
-            r.notes,
-            r.authorId,
-            r.id
-        FROM
-            reports r
-        INNER JOIN
-            locations l
-        ON
-            r.locationId = l.id
+        ${reportDetailsQuery}
         WHERE r.id = ${reportId}
         LIMIT 1
             ; 
