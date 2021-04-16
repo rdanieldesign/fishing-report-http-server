@@ -43,17 +43,17 @@ app.get('/api/reports', (req: Request, res: ServerResponse) => {
     handleResponse(getReports(req.query), res);
 });
 
-app.get('/api/reports/:reportId', (req: Request, res: ServerResponse) => {
-    handleResponse(getReport(req.params.reportId), res);
-});
-
 app.get(
     '/api/reports/my-reports',
     [authenticate],
     (req: Request, res: ServerResponse) => {
-        handleResponse(getReports({...req.params, authorId: req.body.authenticatedUserId}), res);
+        handleResponse(getReports({ ...req.params, authorId: req.body.authenticatedUserId.toString() }), res);
     }
 );
+
+app.get('/api/reports/:reportId', (req: Request, res: ServerResponse) => {
+    handleResponse(getReport(req.params.reportId), res);
+});
 
 app.post(
     '/api/reports',
