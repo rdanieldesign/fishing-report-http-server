@@ -24,6 +24,13 @@ export function getUser(userId: number): Promise<IUser[]> {
     );
 }
 
+export function getUsers(): Promise<IUser[]> {
+    return queryToPromise(`
+        SELECT name, email, id
+        FROM users;`
+    );
+}
+
 export function getUserWithPasswordByEmail(email: string): Promise<IUser[]> {
     return queryToPromise(`
         SELECT *

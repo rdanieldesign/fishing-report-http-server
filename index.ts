@@ -7,7 +7,7 @@ import { login, signUp, verifyToken } from './services/auth-service';
 import { IVerifiedTokenResponse } from './interfaces/auth-interface';
 import { NextFunction, Request } from 'express-serve-static-core';
 import { IError } from './interfaces/error-interface';
-import { getUser } from './services/user-service';
+import { getUser, getUsers } from './services/user-service';
 
 const host = 'localhost';
 const port = 3000;
@@ -85,6 +85,13 @@ app.get(
     [authenticate],
     (req: Request, res: ServerResponse) => {
         handleResponse(getUser(req.body.authenticatedUserId), res);
+    }
+);
+
+app.get(
+    '/api/users',
+    (req: Request, res: ServerResponse) => {
+        handleResponse(getUsers(), res);
     }
 );
 

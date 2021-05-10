@@ -3,6 +3,7 @@ import {
     addUser as addUserModel,
     getUser as getUserModel,
     getUserWithPasswordByEmail as getUserWithPasswordByEmailModel,
+    getUsers as getUsersModel,
 } from '../models/user-model';
 
 export function addUser(newUser: INewUser): Promise<number> {
@@ -21,6 +22,10 @@ export function getUserWithPasswordByEmail(email: string): Promise<IUser | null>
         .then((res: IUser[]): IUser | null => {
             return getFirstUser(res);
         });
+}
+
+export function getUsers(): Promise<IUser[]> {
+    return getUsersModel();
 }
 
 function getFirstUser(users: IUser[]): IUser | null {
