@@ -22,7 +22,7 @@ export function getLocation(locationId: string): Promise<ILocation | null> {
         });
 }
 
-export function addLocation(newLocation: INewLocation): Promise<ILocation> {
+export function addLocation(newLocation: INewLocation): Promise<number> {
     return addLocationModel(newLocation);
 }
 

@@ -32,6 +32,7 @@ export function getReports(params: Partial<IReport>, showDetails: boolean): Prom
         ${showDetails ? reportDetailsQuery : reportQuery}
         ${queryCriteria ? 'WHERE' : ''}
         ${queryCriteria}
+        ORDER BY date DESC
         ;
     `);
 }
