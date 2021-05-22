@@ -1,10 +1,11 @@
 import { Connection, createConnection, MysqlError } from 'mysql';
+import { MYSQL_PASSWORD, MYSQL_USERNAME, MYSQL_HOST } from '../secret';
 
 export function getDBConnection(): Connection {
     const connection = createConnection({
-        host: 'localhost',
-        user: 'rdanieldesign',
-        password: process.argv[2],
+        host: MYSQL_HOST,
+        user: MYSQL_USERNAME,
+        password: MYSQL_PASSWORD,
         database: 'fishing_report',
     });
     connection.connect();
