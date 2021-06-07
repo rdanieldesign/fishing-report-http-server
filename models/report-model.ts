@@ -1,4 +1,8 @@
-import { INewReport, IReport, IReportDetails } from '../interfaces/report-interface';
+import {
+  INewReport,
+  IReport,
+  IReportDetails,
+} from '../interfaces/report-interface';
 import { queryToPromise } from './mysql-util';
 
 const reportDetailsQuery = `
@@ -20,15 +24,17 @@ const reportDetailsQuery = `
 
 const reportQuery = 'SELECT * FROM reports';
 
-export function getReports(params: Partial<IReport>, showDetails: boolean): Promise<IReport[] | IReportDetails[]> {
-    const queryCriteria = Object.keys(params).reduce((criteria, key) => {
-        if (criteria) {
-            criteria += ' AND ';
-        }
-        return criteria += `${key} = ${params[key as keyof IReport]}`;
-
-    }, '');
-    return queryToPromise<IReport[] | IReportDetails[]>(`
+export function getReports(
+  params: Partial<IReport>,
+  showDetails: boolean
+): Promise<IReport[] | IReportDetails[]> {
+  const queryCriteria = Object.keys(params).reduce((criteria, key) => {
+    if (criteria) {
+      criteria += ' AND ';
+    }
+    return (criteria += `${key} = ${params[key as keyof IReport]}`);
+  }, '');
+  return queryToPromise<IReport[] | IReportDetails[]>(`
         ${showDetails ? reportDetailsQuery : reportQuery}
         ${queryCriteria ? 'WHERE' : ''}
         ${queryCriteria}
@@ -38,7 +44,7 @@ export function getReports(params: Partial<IReport>, showDetails: boolean): Prom
 }
 
 export function getReportById(reportId: number): Promise<IReport[]> {
-    return queryToPromise<IReport[]>(`
+  return queryToPromise<IReport[]>(`
         ${reportDetailsQuery}
         WHERE r.id = ${reportId}
         LIMIT 1
@@ -47,8 +53,8 @@ export function getReportById(reportId: number): Promise<IReport[]> {
 }
 
 export function addReport(newReport: INewReport): Promise<IReport> {
-    return queryToPromise<IReport>(
-        `INSERT INTO reports(locationId, date, catchCount, notes, authorId) VALUES
+  return queryToPromise<IReport>(
+    `INSERT INTO reports(locationId, date, catchCount, notes, authorId) VALUES
                 (
                     ${newReport.locationId},
                     "${newReport.date}",
@@ -56,12 +62,15 @@ export function addReport(newReport: INewReport): Promise<IReport> {
                     "${newReport.notes}",
                     "${newReport.authorId}"
                 );`
-    );
+  );
 }
 
-export function updateReport(reportId: number, newReport: INewReport): Promise<IReport> {
-    return queryToPromise<IReport>(
-        `UPDATE reports
+export function updateReport(
+  reportId: number,
+  newReport: INewReport
+): Promise<IReport> {
+  return queryToPromise<IReport>(
+    `UPDATE reports
                 SET
                     locationId = ${newReport.locationId},
                     date = "${newReport.date}",
@@ -70,12 +79,12 @@ export function updateReport(reportId: number, newReport: INewReport): Promise<I
                     authorId = "${newReport.authorId}"
 
                 WHERE ID = ${reportId};`
-    );
+  );
 }
 
 export function deleteReport(reportId: number): Promise<void> {
-    return queryToPromise<void>(
-        `DELETE FROM reports
+  return queryToPromise<void>(
+    `DELETE FROM reports
                 WHERE ID = ${reportId};`
-    );
+  );
 }
