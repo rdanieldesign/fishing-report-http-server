@@ -30,7 +30,8 @@ function sendUnauthorizedMessage(): Promise<IError> {
 }
 
 export function getReports(
-  queryParams: ParsedQs
+  queryParams: ParsedQs,
+  currentUserId: number
 ): Promise<IReport[] | IReportDetails[]> {
   const allowedParams = ["authorId", "locationId"];
   const reportParams: Partial<IReport> = allowedParams.reduce(
@@ -45,7 +46,11 @@ export function getReports(
     },
     {}
   );
-  return getReportsModel(reportParams, queryParams.details === "true");
+  return getReportsModel(
+    reportParams,
+    queryParams.details === "true",
+    currentUserId
+  );
 }
 
 export function getReport(reportId: string): Promise<IReport | null> {

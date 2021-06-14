@@ -54,8 +54,8 @@ app.put("/api/locations/:locationId", (req: Request, res: ServerResponse) => {
 
 // REPORTS
 
-app.get("/api/reports", (req: Request, res: ServerResponse) => {
-  handleResponse(getReports(req.query), res);
+app.get("/api/reports", [authenticate], (req: Request, res: ServerResponse) => {
+  handleResponse(getReports(req.query, req.body.authenticatedUserId), res);
 });
 
 app.get(
@@ -63,18 +63,25 @@ app.get(
   [authenticate],
   (req: Request, res: ServerResponse) => {
     handleResponse(
-      getReports({
-        ...req.params,
-        authorId: req.body.authenticatedUserId.toString(),
-      }),
+      getReports(
+        {
+          ...req.query,
+          authorId: req.body.authenticatedUserId.toString(),
+        },
+        req.body.authenticatedUserId
+      ),
       res
     );
   }
 );
 
-app.get("/api/reports/:reportId", (req: Request, res: ServerResponse) => {
-  handleResponse(getReport(req.params.reportId), res);
-});
+app.get(
+  "/api/reports/:reportId",
+  [authenticate],
+  (req: Request, res: ServerResponse) => {
+    handleResponse(getReport(req.params.reportId), res);
+  }
+);
 
 app.post(
   "/api/reports",
