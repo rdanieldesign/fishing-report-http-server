@@ -20,6 +20,12 @@ import { IVerifiedTokenResponse } from "./interfaces/auth-interface";
 import { NextFunction, Request } from "express-serve-static-core";
 import { IError } from "./interfaces/error-interface";
 import { getUser, getUsers } from "./services/user-service";
+import {
+  createFriendRequest,
+  getFriendRequests,
+  getFriends,
+  updateFriendStatus,
+} from "./services/friend-service";
 
 const host = "localhost";
 const port = 3000;
@@ -129,6 +135,42 @@ app.get("/api/users", (req: Request, res: ServerResponse) => {
   handleResponse(getUsers(), res);
 });
 
+// FRIENDS
+
+app.post(
+  "/api/friends",
+  [authenticate],
+  (req: Request, res: ServerResponse) => {
+    handleResponse(
+      createFriendRequest(req.body.authenticatedUserId, req.body.userId),
+      res
+    );
+  }
+);
+
+app.put("/api/friends", [authenticate], (req: Request, res: ServerResponse) => {
+  handleResponse(
+    updateFriendStatus(
+      req.body.authenticatedUserId,
+      req.body.userId,
+      req.body.status
+    ),
+    res
+  );
+});
+
+app.get(
+  "/api/friends/requests",
+  [authenticate],
+  (req: Request, res: ServerResponse) => {
+    handleResponse(getFriendRequests(req.body.authenticatedUserId), res);
+  }
+);
+
+app.get("/api/friends", [authenticate], (req: Request, res: ServerResponse) => {
+  handleResponse(getFriends(req.body.authenticatedUserId), res);
+});
+
 // AUTH
 app.post("/api/auth/signup", (req: Request, res: ServerResponse) => {
   handleResponse(signUp(req.body), res);
@@ -172,6 +214,7 @@ function handleResponse<T>(responsePromise: Promise<T>, res: ServerResponse) {
       res.write(JSON.stringify(response));
     })
     .catch((err: IError) => {
+      console.log("error", err);
       const status: number | null = err && err.status ? err.status : null;
       const message: string | IError =
         err && err.message ? err.message : JSON.stringify(err);
