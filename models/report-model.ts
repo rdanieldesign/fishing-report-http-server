@@ -3,6 +3,7 @@ import {
   IReport,
   IReportDetails,
 } from '../interfaces/report-interface';
+import { FRIENDS_AND_ME_FILTER, FRIENDS_JOIN } from './friend-model';
 import { multiQueryToPromise, queryToPromise } from './mysql-util';
 
 const reportDetailsQuery = `
@@ -19,10 +20,6 @@ const reportDetailsQuery = `
     INNER JOIN locations L ON R.locationId = L.id
     INNER JOIN users U ON R.authorId = U.id
 `;
-
-const friendsJoin = `JOIN friends F ON (F.userOneId = @current_user OR F.userTwoId = @current_user)`;
-const friendsFilter = `R.authorId != @current_user AND (R.authorId = F.userOneId OR R.authorId = F.userTwoId)`;
-const friendsAndMeFilter = `(${friendsFilter}) OR R.authorId = @current_user`;
 
 const reportQuery = 'SELECT * FROM reports';
 const setCurrentUser = (currentUserId: number) =>
@@ -45,22 +42,30 @@ export function getReports(
   const query = `
       ${setCurrentUser(currentUserId)}
       ${showDetails ? reportDetailsQuery : reportQuery}
-      ${friendsJoin}
+      ${FRIENDS_JOIN}
       WHERE
         ${queryCriteria}
-        (${friendsAndMeFilter})
+        (${FRIENDS_AND_ME_FILTER})
       ORDER BY date DESC
       ;
   `;
   return multiQueryToPromise<IReport[] | IReportDetails[]>(query);
 }
 
-export function getReportById(reportId: number): Promise<IReport[]> {
-  return queryToPromise<IReport[]>(`
+export function getReportById(
+  reportId: number,
+  currentUserId: number
+): Promise<IReport[]> {
+  return multiQueryToPromise<IReport[]>(`
+        ${setCurrentUser(currentUserId)}
         ${reportDetailsQuery}
-        WHERE r.id = ${reportId}
+        ${FRIENDS_JOIN}
+        WHERE
+          r.id = ${reportId}
+          AND
+          (${FRIENDS_AND_ME_FILTER})
         LIMIT 1
-            ; 
+            ;
     `);
 }
 

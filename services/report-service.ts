@@ -17,7 +17,7 @@ async function reportBelongsToUser(
   reportId: string,
   userId: number
 ): Promise<boolean> {
-  const report = await getReport(reportId);
+  const report = await getReport(reportId, userId);
   return Boolean(report && report.authorId === userId);
 }
 
@@ -53,8 +53,11 @@ export function getReports(
   );
 }
 
-export function getReport(reportId: string): Promise<IReport | null> {
-  return getReportByIdModel(parseInt(reportId)).then(
+export function getReport(
+  reportId: string,
+  currentUserId: number
+): Promise<IReport | null> {
+  return getReportByIdModel(parseInt(reportId), currentUserId).then(
     (res: IReport[]): IReport | null => {
       if (res && res[0]) {
         return res[0];
@@ -74,8 +77,8 @@ export async function updateReport(
   newReport: INewReport,
   userId: number
 ): Promise<IReport | IError> {
-  const userCanDeleteReport = await reportBelongsToUser(reportId, userId);
-  if (userCanDeleteReport) {
+  const userCanUpdateReport = await reportBelongsToUser(reportId, userId);
+  if (userCanUpdateReport) {
     return updateReportModel(parseInt(reportId), newReport);
   } else {
     return sendUnauthorizedMessage();

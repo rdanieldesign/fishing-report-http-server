@@ -25,6 +25,8 @@ import {
   getFriendRequests,
   getFriends,
   updateFriendStatus,
+  getFriendOptions,
+  getPendingFriendRequests,
 } from "./services/friend-service";
 
 const host = "localhost";
@@ -85,7 +87,10 @@ app.get(
   "/api/reports/:reportId",
   [authenticate],
   (req: Request, res: ServerResponse) => {
-    handleResponse(getReport(req.params.reportId), res);
+    handleResponse(
+      getReport(req.params.reportId, req.body.authenticatedUserId),
+      res
+    );
   }
 );
 
@@ -167,6 +172,22 @@ app.get(
   }
 );
 
+app.get(
+  "/api/friends/pending",
+  [authenticate],
+  (req: Request, res: ServerResponse) => {
+    handleResponse(getPendingFriendRequests(req.body.authenticatedUserId), res);
+  }
+);
+
+app.get(
+  "/api/friends/options",
+  [authenticate],
+  (req: Request, res: ServerResponse) => {
+    handleResponse(getFriendOptions(req.body.authenticatedUserId), res);
+  }
+);
+
 app.get("/api/friends", [authenticate], (req: Request, res: ServerResponse) => {
   handleResponse(getFriends(req.body.authenticatedUserId), res);
 });
@@ -203,6 +224,7 @@ async function authenticate(
     };
     next();
   } else {
+    console.log("failure");
     sendErrorResponse(res, tokenResponse.status, tokenResponse.message);
   }
 }
@@ -214,7 +236,6 @@ function handleResponse<T>(responsePromise: Promise<T>, res: ServerResponse) {
       res.write(JSON.stringify(response));
     })
     .catch((err: IError) => {
-      console.log("error", err);
       const status: number | null = err && err.status ? err.status : null;
       const message: string | IError =
         err && err.message ? err.message : JSON.stringify(err);
