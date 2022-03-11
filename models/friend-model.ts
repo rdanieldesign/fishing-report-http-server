@@ -7,7 +7,7 @@ import {
 import { IUser } from '../interfaces/user-interface';
 import { queryToPromise } from './mysql-util';
 
-export const FRIENDS_JOIN = `JOIN friends F ON F.userOneId = @current_user OR F.userTwoId = @current_user`;
+export const FRIENDS_JOIN = `LEFT JOIN friends F ON F.userOneId = @current_user OR F.userTwoId = @current_user`;
 export const FRIENDS_FILTER = `(R.authorId = F.userOneId OR R.authorId = F.userTwoId) AND F.status = ${FriendStatus.Confirmed}`;
 export const FRIENDS_AND_ME_FILTER = `R.authorId = @current_user OR (${FRIENDS_FILTER})`;
 

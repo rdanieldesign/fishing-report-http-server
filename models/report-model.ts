@@ -61,7 +61,7 @@ export function getReportById(
         ${reportDetailsQuery}
         ${FRIENDS_JOIN}
         WHERE
-          r.id = ${reportId}
+          R.id = ${reportId}
           AND
           (${FRIENDS_AND_ME_FILTER})
         LIMIT 1
