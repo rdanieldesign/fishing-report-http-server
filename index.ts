@@ -140,6 +140,10 @@ app.get("/api/users", (req: Request, res: ServerResponse) => {
   handleResponse(getUsers(), res);
 });
 
+app.get("/api/users/:userId", (req: Request, res: ServerResponse) => {
+  handleResponse(getUser(req.params.userId), res);
+});
+
 // FRIENDS
 
 app.post(
