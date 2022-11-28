@@ -16,13 +16,13 @@ import {
 } from "../models/friend-model";
 
 export async function createFriendRequest(
-  requesterId: string,
+  requesterId: number | undefined,
   friendId: string
 ): Promise<number | IError> {
-  const friendship = await getFriendship(
-    parseInt(requesterId),
-    parseInt(friendId)
-  );
+  if (!requesterId) {
+    return sendUnauthorizedMessage();
+  }
+  const friendship = await getFriendship(requesterId, parseInt(friendId));
   if (friendship) {
     return updateFriendStatus(
       requesterId,
@@ -31,7 +31,7 @@ export async function createFriendRequest(
     ).then(() => FriendStatus.Requested);
   } else {
     return createFriendshipModel(
-      parseInt(requesterId),
+      requesterId,
       parseInt(friendId),
       FriendStatus.Requested,
       parseInt(friendId)
@@ -40,22 +40,24 @@ export async function createFriendRequest(
 }
 
 export async function updateFriendStatus(
-  requesterId: string,
+  requesterId: number | undefined,
   friendId: string,
   status: FriendStatus
 ): Promise<IFriendship | IError> {
-  const requesterIdNum = parseInt(requesterId);
+  if (!requesterId) {
+    return sendUnauthorizedMessage();
+  }
   const friendIdNum = parseInt(friendId);
-  const friendship = await getFriendship(requesterIdNum, friendIdNum);
+  const friendship = await getFriendship(requesterId, friendIdNum);
   const canUpdateFriendship = await getCanUpdateFriendship(
-    requesterIdNum,
+    requesterId,
     friendship
   );
   if (!canUpdateFriendship) {
     return sendUnauthorizedMessage();
   }
   const { actionUserId, otherUserId } = getActionUserByStatusUpdate(
-    requesterIdNum,
+    requesterId,
     friendIdNum,
     status
   );
@@ -63,25 +65,39 @@ export async function updateFriendStatus(
 }
 
 export function getFriendRequests(
-  currentUserId: string
-): Promise<IFriendshipDetails[]> {
-  return getFriendRequestsModel(parseInt(currentUserId));
+  currentUserId: number | undefined
+): Promise<IFriendshipDetails[] | IError> {
+  if (!currentUserId) {
+    return sendUnauthorizedMessage();
+  }
+  return getFriendRequestsModel(currentUserId);
 }
 
 export function getPendingFriendRequests(
-  currentUserId: string
-): Promise<IFriendshipDetails[]> {
-  return getFriendPendingRequestsModel(parseInt(currentUserId));
+  currentUserId: number | undefined
+): Promise<IFriendshipDetails[] | IError> {
+  if (!currentUserId) {
+    return sendUnauthorizedMessage();
+  }
+  return getFriendPendingRequestsModel(currentUserId);
 }
 
-export function getFriendOptions(currentUserId: string): Promise<IUser[]> {
-  return getFriendOptionsModel(parseInt(currentUserId));
+export function getFriendOptions(
+  currentUserId: number | undefined
+): Promise<IUser[] | IError> {
+  if (!currentUserId) {
+    return sendUnauthorizedMessage();
+  }
+  return getFriendOptionsModel(currentUserId);
 }
 
 export function getFriends(
-  currentUserId: string
-): Promise<IFriendshipDetails[]> {
-  return getFriendsModel(parseInt(currentUserId));
+  currentUserId: number | undefined
+): Promise<IFriendshipDetails[] | IError> {
+  if (!currentUserId) {
+    return sendUnauthorizedMessage();
+  }
+  return getFriendsModel(currentUserId);
 }
 
 async function getFriendship(

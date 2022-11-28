@@ -4,6 +4,7 @@ export interface INewReport {
   date: string;
   notes: string;
   authorId: number;
+  imageURLs?: string[];
 }
 
 export interface IReport extends INewReport {
@@ -13,4 +14,9 @@ export interface IReport extends INewReport {
 export interface IReportDetails extends IReport {
   locationName: string;
   locationLink: string;
+}
+
+export interface IReportImage {
+  reportId: number;
+  imageId: string;
 }

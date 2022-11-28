@@ -28,6 +28,7 @@ import {
   getFriendOptions,
   getPendingFriendRequests,
 } from "./services/friend-service";
+import { uploadMutlipleImages } from "./services/image-service";
 
 const host = "localhost";
 const port = 3000;
@@ -63,7 +64,7 @@ app.put("/api/locations/:locationId", (req: Request, res: ServerResponse) => {
 // REPORTS
 
 app.get("/api/reports", [authenticate], (req: Request, res: ServerResponse) => {
-  handleResponse(getReports(req.query, req.body.authenticatedUserId), res);
+  handleResponse(getReports(req.query, req.authenticatedUserId), res);
 });
 
 app.get(
@@ -74,9 +75,9 @@ app.get(
       getReports(
         {
           ...req.query,
-          authorId: req.body.authenticatedUserId.toString(),
+          authorId: req.authenticatedUserId?.toString(),
         },
-        req.body.authenticatedUserId
+        req.authenticatedUserId
       ),
       res
     );
@@ -88,7 +89,7 @@ app.get(
   [authenticate],
   (req: Request, res: ServerResponse) => {
     handleResponse(
-      getReport(req.params.reportId, req.body.authenticatedUserId),
+      getReport(req.params.reportId, req.authenticatedUserId),
       res
     );
   }
@@ -96,10 +97,16 @@ app.get(
 
 app.post(
   "/api/reports",
-  [authenticate],
+  [authenticate, uploadMutlipleImages("images")],
   (req: Request, res: ServerResponse) => {
     handleResponse(
-      addReport({ ...req.body, authorId: req.body.authenticatedUserId }),
+      addReport(
+        {
+          ...req.body,
+          authorId: req.authenticatedUserId,
+        },
+        req.files as Express.MulterS3.File[]
+      ),
       res
     );
   }
@@ -110,7 +117,7 @@ app.put(
   [authenticate],
   (req: Request, res: ServerResponse) => {
     handleResponse(
-      updateReport(req.params.reportId, req.body, req.body.authenticatedUserId),
+      updateReport(req.params.reportId, req.body, req.authenticatedUserId),
       res
     );
   }
@@ -121,7 +128,7 @@ app.delete(
   [authenticate],
   (req: Request, res: ServerResponse) => {
     handleResponse(
-      deleteReport(req.params.reportId, req.body.authenticatedUserId),
+      deleteReport(req.params.reportId, req.authenticatedUserId),
       res
     );
   }
@@ -132,7 +139,7 @@ app.get(
   "/api/users/current",
   [authenticate],
   (req: Request, res: ServerResponse) => {
-    handleResponse(getUser(req.body.authenticatedUserId), res);
+    handleResponse(getUser(req.authenticatedUserId), res);
   }
 );
 
@@ -141,7 +148,7 @@ app.get("/api/users", (req: Request, res: ServerResponse) => {
 });
 
 app.get("/api/users/:userId", (req: Request, res: ServerResponse) => {
-  handleResponse(getUser(req.params.userId), res);
+  handleResponse(getUser(parseInt(req.params.userId)), res);
 });
 
 // FRIENDS
@@ -151,7 +158,7 @@ app.post(
   [authenticate],
   (req: Request, res: ServerResponse) => {
     handleResponse(
-      createFriendRequest(req.body.authenticatedUserId, req.body.userId),
+      createFriendRequest(req.authenticatedUserId, req.body.userId),
       res
     );
   }
@@ -160,7 +167,7 @@ app.post(
 app.put("/api/friends", [authenticate], (req: Request, res: ServerResponse) => {
   handleResponse(
     updateFriendStatus(
-      req.body.authenticatedUserId,
+      req.authenticatedUserId,
       req.body.userId,
       req.body.status
     ),
@@ -172,7 +179,7 @@ app.get(
   "/api/friends/requests",
   [authenticate],
   (req: Request, res: ServerResponse) => {
-    handleResponse(getFriendRequests(req.body.authenticatedUserId), res);
+    handleResponse(getFriendRequests(req.authenticatedUserId), res);
   }
 );
 
@@ -180,7 +187,7 @@ app.get(
   "/api/friends/pending",
   [authenticate],
   (req: Request, res: ServerResponse) => {
-    handleResponse(getPendingFriendRequests(req.body.authenticatedUserId), res);
+    handleResponse(getPendingFriendRequests(req.authenticatedUserId), res);
   }
 );
 
@@ -188,12 +195,12 @@ app.get(
   "/api/friends/options",
   [authenticate],
   (req: Request, res: ServerResponse) => {
-    handleResponse(getFriendOptions(req.body.authenticatedUserId), res);
+    handleResponse(getFriendOptions(req.authenticatedUserId), res);
   }
 );
 
 app.get("/api/friends", [authenticate], (req: Request, res: ServerResponse) => {
-  handleResponse(getFriends(req.body.authenticatedUserId), res);
+  handleResponse(getFriends(req.authenticatedUserId), res);
 });
 
 // AUTH
@@ -222,10 +229,7 @@ async function authenticate(
     tokenResponse = err;
   }
   if (tokenResponse.status === 200) {
-    req.body = {
-      ...req.body,
-      authenticatedUserId: tokenResponse.decodedToken?.userId,
-    };
+    req.authenticatedUserId = tokenResponse.decodedToken?.userId;
     next();
   } else {
     console.log("failure");

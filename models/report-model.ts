@@ -1,3 +1,4 @@
+import { OkPacket } from 'mysql';
 import {
   INewReport,
   IReport,
@@ -69,8 +70,8 @@ export function getReportById(
     `);
 }
 
-export function addReport(newReport: INewReport): Promise<IReport> {
-  return queryToPromise<IReport>(
+export function addReport(newReport: INewReport): Promise<OkPacket> {
+  return queryToPromise<OkPacket>(
     `INSERT INTO reports(locationId, date, catchCount, notes, authorId) VALUES
                 (
                     ${newReport.locationId},

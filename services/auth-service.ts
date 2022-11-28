@@ -84,3 +84,11 @@ export async function signUp(newUser: INewUser): Promise<string | null> {
 function getTokenBody(userId: number): IDecodedAuthToken {
   return { userId };
 }
+
+export function sendUnauthorizedMessage(): Promise<IError> {
+  const error: IError = {
+    status: 403,
+    message: "You are not authorized to delete this record.",
+  };
+  return Promise.reject(error);
+}
