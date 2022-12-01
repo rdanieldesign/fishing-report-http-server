@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "tsc && node dist/index.js",
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "pm2 start npm --name 'fishing_report' -- start",
+    "deploy": "pm2 delete fishing_report && pm2 start dist/index.js --name 'fishing_report'",
     "dev": "concurrently 'tsc -w' 'nodemon dist/index.js'"
   },
   "author": "",
