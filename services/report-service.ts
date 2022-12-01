@@ -89,7 +89,8 @@ export function addReport(
   newReport: INewReport,
   images: Express.MulterS3.File[]
 ): Promise<number> {
-  const imageIds = images.map((img) => img.key);
+  // Use the first transform. This might be revised later for thumbnails
+  const imageIds = images.map((img) => img.transforms[0].key);
   return addReportModel(newReport).then((res: OkPacket) => {
     return addReportImages(res.insertId, imageIds).then(() => res.insertId);
   });
