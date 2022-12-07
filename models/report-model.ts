@@ -1,8 +1,10 @@
 import { OkPacket } from 'mysql';
 import {
   INewReport,
+  INewReportModel,
   IReport,
   IReportDetails,
+  IReportModel,
 } from '../interfaces/report-interface';
 import { FRIENDS_AND_ME_FILTER, FRIENDS_JOIN } from './friend-model';
 import { multiQueryToPromise, queryToPromise } from './mysql-util';
@@ -16,7 +18,8 @@ const reportDetailsQuery = `
         R.notes,
         R.authorId,
         U.name authorName,
-        R.id
+        R.id,
+        R.imageIds
     FROM reports R
     INNER JOIN locations L ON R.locationId = L.id
     INNER JOIN users U ON R.authorId = U.id
@@ -56,8 +59,8 @@ export function getReports(
 export function getReportById(
   reportId: number,
   currentUserId: number
-): Promise<IReport[]> {
-  return multiQueryToPromise<IReport[]>(`
+): Promise<IReportModel[]> {
+  return multiQueryToPromise<IReportModel[]>(`
         ${setCurrentUser(currentUserId)}
         ${reportDetailsQuery}
         ${FRIENDS_JOIN}
@@ -70,22 +73,24 @@ export function getReportById(
     `);
 }
 
-export function addReport(newReport: INewReport): Promise<OkPacket> {
+export function addReport(newReport: INewReportModel): Promise<OkPacket> {
   return queryToPromise<OkPacket>(
-    `INSERT INTO reports(locationId, date, catchCount, notes, authorId) VALUES
+    `INSERT INTO reports(locationId, date, catchCount, notes, authorId, imageIds) VALUES
                 (
                     ${newReport.locationId},
                     "${newReport.date}",
                     ${newReport.catchCount},
                     "${newReport.notes}",
-                    "${newReport.authorId}"
-                );`
+                    "${newReport.authorId}",
+                    ?
+                );`,
+    newReport.imageIds
   );
 }
 
 export function updateReport(
   reportId: number,
-  newReport: INewReport
+  newReport: INewReportModel
 ): Promise<IReport> {
   return queryToPromise<IReport>(
     `UPDATE reports
@@ -94,9 +99,11 @@ export function updateReport(
                     date = "${newReport.date}",
                     catchCount = ${newReport.catchCount},
                     notes = "${newReport.notes}",
-                    authorId = "${newReport.authorId}"
+                    authorId = "${newReport.authorId}",
+                    imageIds = ?
 
-                WHERE ID = ${reportId};`
+                WHERE ID = ${reportId};`,
+    newReport.imageIds
   );
 }
 

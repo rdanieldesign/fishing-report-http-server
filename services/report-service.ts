@@ -3,13 +3,11 @@ import { ParsedQs } from "qs";
 import { IError } from "../interfaces/error-interface";
 import {
   INewReport,
+  INewReportModel,
   IReport,
   IReportDetails,
+  IReportModel,
 } from "../interfaces/report-interface";
-import {
-  addReportImages,
-  getReportImages,
-} from "../models/report-images-model";
 import {
   addReport as addReportModel,
   updateReport as updateReportModel,
@@ -19,11 +17,7 @@ import {
 } from "../models/report-model";
 import { deleteMultipleImages, getSignedImageUrl } from "./image-service";
 
-async function reportBelongsToUser(
-  reportId: string,
-  userId: number
-): Promise<boolean> {
-  const report = await getReport(reportId, userId);
+function reportBelongsToUser(report: IReportModel, userId: number): boolean {
   return Boolean(report && (report as IReport).authorId === userId);
 }
 
@@ -70,17 +64,23 @@ export function getReport(
     return sendUnauthorizedMessage();
   }
   return getReportByIdModel(parseInt(reportId), currentUserId).then(
-    (res: IReport[]): Promise<IReport> => {
-      if (res?.[0]) {
-        return getReportImageIds(res[0].id).then((reportImageIds): IReport => {
-          res[0].imageURLs = reportImageIds.map((reportImageId) =>
-            getSignedImageUrl(reportImageId)
-          );
-          return res[0];
-        });
-      } else {
-        return Promise.reject(null);
+    (res: IReportModel[]): IReport | null => {
+      if (!res?.[0]) {
+        return null;
       }
+      if (!res[0].imageIds) {
+        return res[0];
+      }
+      const { imageIds, ...report } = res[0];
+      return {
+        ...report,
+        images: JSON.parse(imageIds).map((imageId: string) => {
+          return {
+            imageId,
+            imageURL: getSignedImageUrl(imageId),
+          };
+        }),
+      };
     }
   );
 }
@@ -90,23 +90,51 @@ export function addReport(
   images: Express.MulterS3.File[]
 ): Promise<number> {
   // Use the first transform. This might be revised later for thumbnails
-  const imageIds = images.map((img) => img.transforms[0].key);
-  return addReportModel(newReport).then((res: OkPacket) => {
-    return addReportImages(res.insertId, imageIds).then(() => res.insertId);
+  const imageIds = JSON.stringify(images.map((img) => img.transforms[0].key));
+  return addReportModel({ ...newReport, imageIds }).then((res: OkPacket) => {
+    return res.insertId;
   });
 }
 
 export async function updateReport(
   reportId: string,
-  newReport: INewReport,
-  userId: number | undefined
+  newReport: INewReportModel,
+  userId: number | undefined,
+  images: Express.MulterS3.File[]
 ): Promise<IReport | IError> {
   if (!userId) {
     return sendUnauthorizedMessage();
   }
-  const userCanUpdateReport = await reportBelongsToUser(reportId, userId);
+  const [report] = await getReportByIdModel(parseInt(reportId), userId);
+  const userCanUpdateReport = reportBelongsToUser(report, userId);
   if (userCanUpdateReport) {
-    return updateReportModel(parseInt(reportId), newReport);
+    const updatedReport: IReportModel = {
+      ...newReport,
+      imageIds: JSON.stringify(
+        JSON.parse(newReport.imageIds)?.map((imageId: string) => {
+          const matchingImage = images.find((image) => {
+            return image.originalname === imageId;
+          });
+          if (matchingImage?.transforms?.[0]?.key) {
+            return matchingImage.transforms[0].key;
+          }
+          return imageId;
+        })
+      ),
+      authorId: userId,
+      id: parseInt(reportId),
+    };
+    const removedImageIds = JSON.parse(report.imageIds)?.filter(
+      (imageId: string) => {
+        return !JSON.parse(updatedReport.imageIds)?.find(
+          (newId: string) => newId === imageId
+        );
+      }
+    );
+    if (removedImageIds?.length) {
+      deleteMultipleImages(removedImageIds);
+    }
+    return updateReportModel(parseInt(reportId), updatedReport);
   } else {
     return sendUnauthorizedMessage();
   }
@@ -119,9 +147,10 @@ export async function deleteReport(
   if (!userId) {
     return sendUnauthorizedMessage();
   }
-  const userCanDeleteReport = await reportBelongsToUser(reportId, userId);
+  const [report] = await getReportByIdModel(parseInt(reportId), userId);
+  const userCanDeleteReport = reportBelongsToUser(report, userId);
   if (userCanDeleteReport) {
-    const imageIds = await getReportImageIds(parseInt(reportId));
+    const imageIds = JSON.parse(report.imageIds);
     return deleteReportModel(parseInt(reportId)).then((res) => {
       if (imageIds) {
         deleteMultipleImages(imageIds);
@@ -131,9 +160,4 @@ export async function deleteReport(
   } else {
     return sendUnauthorizedMessage();
   }
-}
-
-async function getReportImageIds(reportId: number): Promise<string[]> {
-  const reportImages = await getReportImages(reportId);
-  return reportImages.map((reportImage) => reportImage.imageId);
 }

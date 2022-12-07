@@ -13,15 +13,19 @@ export function getDBConnection(multipleStatements = false): Connection {
   return connection;
 }
 
-export function queryToPromise<T>(query: string): Promise<T> {
+export function queryToPromise<T>(query: string, values: any = []): Promise<T> {
   const connection = getDBConnection();
   const request = new Promise<T>((resolve, reject) => {
-    connection.query(query, function (error: MysqlError, results: T) {
-      if (error) {
-        reject(error);
+    connection.query(
+      query,
+      values,
+      function (error: MysqlError | null, results: T) {
+        if (error) {
+          reject(error);
+        }
+        resolve(results);
       }
-      resolve(results);
-    });
+    );
   });
   connection.end();
   return request;

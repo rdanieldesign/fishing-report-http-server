@@ -114,10 +114,15 @@ app.post(
 
 app.put(
   "/api/reports/:reportId",
-  [authenticate],
+  [authenticate, uploadMutlipleImages("images")],
   (req: Request, res: ServerResponse) => {
     handleResponse(
-      updateReport(req.params.reportId, req.body, req.authenticatedUserId),
+      updateReport(
+        req.params.reportId,
+        req.body,
+        req.authenticatedUserId,
+        req.files as Express.MulterS3.File[]
+      ),
       res
     );
   }

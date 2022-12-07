@@ -3,6 +3,7 @@ import multerS3Transform from "multer-s3-transform";
 import aws from "aws-sdk";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
+import { AWS_BUCKET } from "../secret";
 
 const s3 = new aws.S3({ region: "us-east-1" });
 
@@ -11,7 +12,7 @@ const maxSize = 5 * 1000 * 1000;
 function uploadImage() {
   return multer({
     limits: {
-      fileSize: maxSize,
+      // fileSize: maxSize,
       files: 5,
     },
     fileFilter: function (req, file, next) {
@@ -22,7 +23,7 @@ function uploadImage() {
     },
     storage: multerS3Transform({
       s3: s3,
-      bucket: "fishingreport",
+      bucket: AWS_BUCKET,
       metadata: function (req, file, cb) {
         cb(null, { fieldName: file.fieldname });
       },
@@ -54,14 +55,14 @@ export function uploadMutlipleImages(propertyKey: string) {
 
 export function getSignedImageUrl(imageKey: string): string {
   return s3.getSignedUrl("getObject", {
-    Bucket: "fishingreport",
+    Bucket: AWS_BUCKET,
     Key: imageKey,
     Expires: 5 * 60, // 5 minutes
   });
 }
 
 export function deleteSingleImage(imageId: string) {
-  return s3.deleteObject({ Bucket: "fishingreport", Key: imageId }, (err) => {
+  return s3.deleteObject({ Bucket: AWS_BUCKET, Key: imageId }, (err) => {
     if (err) {
       console.log(err);
     }
@@ -71,7 +72,7 @@ export function deleteSingleImage(imageId: string) {
 export function deleteMultipleImages(imageIds: string[]) {
   return s3.deleteObjects(
     {
-      Bucket: "fishingreport",
+      Bucket: AWS_BUCKET,
       Delete: { Objects: imageIds.map((imageId) => ({ Key: imageId })) },
     },
     (err) => {
