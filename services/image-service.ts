@@ -37,7 +37,7 @@ function uploadImage() {
             cb(null, uuidv4());
           },
           transform: function (req, file, cb) {
-            cb(null, sharp().resize({ width: 800 }));
+            cb(null, sharp().resize({ width: 800 }).withMetadata());
           },
         },
       ],
