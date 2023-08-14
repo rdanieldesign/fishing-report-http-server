@@ -7,7 +7,9 @@
     "start": "tsc && node dist/index.js",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "pm2 delete fishing_report && pm2 start dist/index.js --name 'fishing_report'",
+    "copy": "scp -r dist rdanieldesign@212.1.214.83:/home/rdanieldesign/apps/fishing-report-http-server",
+    "restart": "ssh rdanieldesign@212.1.214.83 \"pm2 delete fishing_report && pm2 start apps/fishing-report-http-server/dist/index.js --name 'fishing_report'\"",
+    "deploy": "npm run build && npm run copy && npm run restart",
     "dev": "concurrently 'tsc -w' 'nodemon dist/index.js'"
   },
   "author": "",
