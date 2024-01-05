@@ -50,6 +50,7 @@ export function uploadSingleImage(propertyKey: string) {
 }
 
 export function uploadMutlipleImages(propertyKey: string) {
+  console.log("uploading images");
   return uploadImage().array(propertyKey);
 }
 
