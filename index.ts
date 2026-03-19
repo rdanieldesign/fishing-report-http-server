@@ -1,4 +1,3 @@
-import { ServerResponse } from "http";
 import {
   addLocation,
   deleteLocation,
@@ -6,8 +5,7 @@ import {
   getLocations,
   updateLocation,
 } from "./services/location-service";
-import express from "express";
-import { json } from "body-parser";
+import express, { Response } from "express";
 import {
   addReport,
   deleteReport,
@@ -50,43 +48,43 @@ const host = "localhost";
 const port = 3000;
 const app = express();
 
-app.use(json());
+app.use(express.json());
 
 // LOCATIONS
 
-app.get("/api/locations", (req: Request, res: ServerResponse) => {
+app.get("/api/locations", (req: Request, res: Response) => {
   handleResponse(getLocations(), res);
 });
 
-app.get("/api/locations/:locationId", (req: Request, res: ServerResponse) => {
+app.get("/api/locations/:locationId", (req: Request, res: Response) => {
   handleResponse(getLocation(req.params.locationId), res);
 });
 
-app.post("/api/locations", (req: Request, res: ServerResponse) => {
+app.post("/api/locations", (req: Request, res: Response) => {
   handleResponse(addLocation(req.body), res);
 });
 
 app.delete(
   "/api/locations/:locationId",
-  (req: Request, res: ServerResponse) => {
+  (req: Request, res: Response) => {
     handleResponse(deleteLocation(req.params.locationId), res);
   }
 );
 
-app.put("/api/locations/:locationId", (req: Request, res: ServerResponse) => {
+app.put("/api/locations/:locationId", (req: Request, res: Response) => {
   handleResponse(updateLocation(req.params.locationId, req.body), res);
 });
 
 // REPORTS
 
-app.get("/api/reports", [authenticate], (req: Request, res: ServerResponse) => {
+app.get("/api/reports", [authenticate], (req: Request, res: Response) => {
   handleResponse(getReports(req.query, req.authenticatedUserId), res);
 });
 
 app.get(
   "/api/reports/my-reports",
   [authenticate],
-  (req: Request, res: ServerResponse) => {
+  (req: Request, res: Response) => {
     handleResponse(
       getReports(
         {
@@ -103,7 +101,7 @@ app.get(
 app.get(
   "/api/reports/:reportId",
   [authenticate],
-  (req: Request, res: ServerResponse) => {
+  (req: Request, res: Response) => {
     handleResponse(
       getReport(req.params.reportId, req.authenticatedUserId),
       res
@@ -114,7 +112,7 @@ app.get(
 app.post(
   "/api/reports",
   [authenticate, uploadMutlipleImages("images")],
-  (req: Request, res: ServerResponse) => {
+  (req: Request, res: Response) => {
     handleResponse(
       addReport(
         {
@@ -131,7 +129,7 @@ app.post(
 app.put(
   "/api/reports/:reportId",
   [authenticate, uploadMutlipleImages("images")],
-  (req: Request, res: ServerResponse) => {
+  (req: Request, res: Response) => {
     handleResponse(
       updateReport(
         req.params.reportId,
@@ -147,7 +145,7 @@ app.put(
 app.delete(
   "/api/reports/:reportId",
   [authenticate],
-  (req: Request, res: ServerResponse) => {
+  (req: Request, res: Response) => {
     handleResponse(
       deleteReport(req.params.reportId, req.authenticatedUserId),
       res
@@ -159,16 +157,16 @@ app.delete(
 app.get(
   "/api/users/current",
   [authenticate],
-  (req: Request, res: ServerResponse) => {
+  (req: Request, res: Response) => {
     handleResponse(getUser(req.authenticatedUserId), res);
   }
 );
 
-app.get("/api/users", (req: Request, res: ServerResponse) => {
+app.get("/api/users", (req: Request, res: Response) => {
   handleResponse(getUsers(), res);
 });
 
-app.get("/api/users/:userId", (req: Request, res: ServerResponse) => {
+app.get("/api/users/:userId", (req: Request, res: Response) => {
   handleResponse(getUser(parseInt(req.params.userId)), res);
 });
 
@@ -177,7 +175,7 @@ app.get("/api/users/:userId", (req: Request, res: ServerResponse) => {
 app.post(
   "/api/friends",
   [authenticate],
-  (req: Request, res: ServerResponse) => {
+  (req: Request, res: Response) => {
     handleResponse(
       createFriendRequest(req.authenticatedUserId, req.body.userId),
       res
@@ -185,7 +183,7 @@ app.post(
   }
 );
 
-app.put("/api/friends", [authenticate], (req: Request, res: ServerResponse) => {
+app.put("/api/friends", [authenticate], (req: Request, res: Response) => {
   handleResponse(
     updateFriendStatus(
       req.authenticatedUserId,
@@ -199,7 +197,7 @@ app.put("/api/friends", [authenticate], (req: Request, res: ServerResponse) => {
 app.get(
   "/api/friends/requests",
   [authenticate],
-  (req: Request, res: ServerResponse) => {
+  (req: Request, res: Response) => {
     handleResponse(getFriendRequests(req.authenticatedUserId), res);
   }
 );
@@ -207,7 +205,7 @@ app.get(
 app.get(
   "/api/friends/pending",
   [authenticate],
-  (req: Request, res: ServerResponse) => {
+  (req: Request, res: Response) => {
     handleResponse(getPendingFriendRequests(req.authenticatedUserId), res);
   }
 );
@@ -215,21 +213,21 @@ app.get(
 app.get(
   "/api/friends/options",
   [authenticate],
-  (req: Request, res: ServerResponse) => {
+  (req: Request, res: Response) => {
     handleResponse(getFriendOptions(req.authenticatedUserId), res);
   }
 );
 
-app.get("/api/friends", [authenticate], (req: Request, res: ServerResponse) => {
+app.get("/api/friends", [authenticate], (req: Request, res: Response) => {
   handleResponse(getFriends(req.authenticatedUserId), res);
 });
 
 // AUTH
-app.post("/api/auth/signup", (req: Request, res: ServerResponse) => {
+app.post("/api/auth/signup", (req: Request, res: Response) => {
   handleResponse(signUp(req.body), res);
 });
 
-app.post("/api/auth/login", (req: Request, res: ServerResponse) => {
+app.post("/api/auth/login", (req: Request, res: Response) => {
   handleResponse(login(req.body), res);
 });
 
@@ -239,7 +237,7 @@ app.listen(port, () => {
 
 async function authenticate(
   req: Request,
-  res: ServerResponse,
+  res: Response,
   next: NextFunction
 ) {
   const token = req.headers["x-access-token"] as string;
@@ -247,7 +245,7 @@ async function authenticate(
   try {
     tokenResponse = await verifyToken(token);
   } catch (err) {
-    tokenResponse = err;
+    tokenResponse = err as IVerifiedTokenResponse;
   }
   if (tokenResponse.status === 200) {
     req.authenticatedUserId = tokenResponse.decodedToken?.userId;
@@ -258,28 +256,23 @@ async function authenticate(
   }
 }
 
-function handleResponse<T>(responsePromise: Promise<T>, res: ServerResponse) {
+function handleResponse<T>(responsePromise: Promise<T>, res: Response) {
   responsePromise
     .then((response: T) => {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.write(JSON.stringify(response));
+      res.status(200).json(response);
     })
     .catch((err: IError) => {
       const status: number | null = err && err.status ? err.status : null;
       const message: string | IError =
         err && err.message ? err.message : JSON.stringify(err);
       sendErrorResponse(res, status, message);
-    })
-    .finally(() => {
-      res.end();
     });
 }
 
 function sendErrorResponse(
-  res: ServerResponse,
+  res: Response,
   status: number | null,
   message: string | null
 ) {
-  res.writeHead(status || 500, { "Content-Type": "application/json" });
-  res.write(JSON.stringify(message));
+  res.status(status || 500).json(message);
 }
