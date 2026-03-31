@@ -1,4 +1,4 @@
-import { OkPacket } from 'mysql';
+import { OkPacket } from 'mysql2';
 import { ILocation, INewLocation } from '../interfaces/location-interface';
 import { queryToPromise } from './mysql-util';
 

@@ -1,4 +1,4 @@
-import { OkPacket, Query } from 'mysql';
+import { OkPacket, Query } from 'mysql2';
 import { INewUser, IUser } from '../interfaces/user-interface';
 import { queryToPromise } from './mysql-util';
 

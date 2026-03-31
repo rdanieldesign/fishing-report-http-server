@@ -1,4 +1,4 @@
-import { OkPacket } from 'mysql';
+import { OkPacket } from 'mysql2';
 import { FriendStatus } from '../enums/friend-enum';
 import {
   IFriendship,

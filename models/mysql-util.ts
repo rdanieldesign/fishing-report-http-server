@@ -1,4 +1,4 @@
-import { Connection, createConnection, MysqlError } from 'mysql';
+import { Connection, createConnection, QueryError, QueryResult, FieldPacket } from 'mysql2';
 import { MYSQL_PASSWORD, MYSQL_USERNAME, MYSQL_HOST } from '../secret';
 
 export function getDBConnection(multipleStatements = false): Connection {
@@ -19,11 +19,11 @@ export function queryToPromise<T>(query: string, values: any = []): Promise<T> {
     connection.query(
       query,
       values,
-      function (error: MysqlError | null, results: T) {
+      function (error: QueryError | null, results: QueryResult, _fields: FieldPacket[]) {
         if (error) {
           reject(error);
         }
-        resolve(results);
+        resolve(results as T);
       }
     );
   });
@@ -34,11 +34,12 @@ export function queryToPromise<T>(query: string, values: any = []): Promise<T> {
 export function multiQueryToPromise<T>(query: string): Promise<T> {
   const connection = getDBConnection(true);
   const request = new Promise<T>((resolve, reject) => {
-    connection.query(query, function (error: MysqlError, results: any[]) {
+    connection.query(query, [], function (error: QueryError | null, results: QueryResult) {
       if (error) {
         reject(error);
       }
-      resolve(results[results.length - 1] as T);
+      const rows = results as any[];
+      resolve(rows[rows.length - 1] as T);
     });
   });
   connection.end();
