@@ -72,9 +72,10 @@ export function getReport(
         return res[0];
       }
       const { imageIds, ...report } = res[0];
+      const parsedImageIds = Array.isArray(imageIds) ? imageIds : JSON.parse(imageIds);
       return {
         ...report,
-        images: JSON.parse(imageIds).map((imageId: string) => {
+        images: parsedImageIds.map((imageId: string) => {
           return {
             imageId,
             imageURL: getSignedImageUrl(imageId),
@@ -111,7 +112,7 @@ export async function updateReport(
     const updatedReport: IReportModel = {
       ...newReport,
       imageIds: JSON.stringify(
-        JSON.parse(newReport.imageIds)?.map((imageId: string) => {
+        (Array.isArray(newReport.imageIds) ? newReport.imageIds : JSON.parse(newReport.imageIds))?.map((imageId: string) => {
           const matchingImage = images.find((image) => {
             return image.originalname === imageId;
           });
@@ -124,7 +125,7 @@ export async function updateReport(
       authorId: userId,
       id: parseInt(reportId),
     };
-    const removedImageIds = JSON.parse(report.imageIds)?.filter(
+    const removedImageIds = (Array.isArray(report.imageIds) ? report.imageIds : JSON.parse(report.imageIds))?.filter(
       (imageId: string) => {
         return !JSON.parse(updatedReport.imageIds)?.find(
           (newId: string) => newId === imageId
@@ -150,7 +151,7 @@ export async function deleteReport(
   const [report] = await getReportByIdModel(parseInt(reportId), userId);
   const userCanDeleteReport = reportBelongsToUser(report, userId);
   if (userCanDeleteReport) {
-    const imageIds = JSON.parse(report.imageIds);
+    const imageIds = Array.isArray(report.imageIds) ? report.imageIds : JSON.parse(report.imageIds);
     return deleteReportModel(parseInt(reportId)).then((res) => {
       if (imageIds) {
         deleteMultipleImages(imageIds);
