@@ -6,6 +6,7 @@ import {
   updateLocation,
 } from "./services/location-service";
 import express, { Response } from "express";
+import cors from "cors";
 import {
   addReport,
   deleteReport,
@@ -48,41 +49,51 @@ const host = "localhost";
 const port = 3000;
 const app = express();
 
+app.use(cors({
+  origin: [
+    'http://localhost:5173',    // local Vite dev server
+    'https://fishing-report.site',
+    'https://www.fishing-report.site',
+    'https://your-app.vercel.app',
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // LOCATIONS
 
-app.get("/api/locations", (req: Request, res: Response) => {
+app.get("/locations", (req: Request, res: Response) => {
   handleResponse(getLocations(), res);
 });
 
-app.get("/api/locations/:locationId", (req: Request, res: Response) => {
+app.get("/locations/:locationId", (req: Request, res: Response) => {
   handleResponse(getLocation(req.params.locationId), res);
 });
 
-app.post("/api/locations", (req: Request, res: Response) => {
+app.post("/locations", (req: Request, res: Response) => {
   handleResponse(addLocation(req.body), res);
 });
 
 app.delete(
-  "/api/locations/:locationId",
+  "/locations/:locationId",
   (req: Request, res: Response) => {
     handleResponse(deleteLocation(req.params.locationId), res);
   }
 );
 
-app.put("/api/locations/:locationId", (req: Request, res: Response) => {
+app.put("/locations/:locationId", (req: Request, res: Response) => {
   handleResponse(updateLocation(req.params.locationId, req.body), res);
 });
 
 // REPORTS
 
-app.get("/api/reports", [authenticate], (req: Request, res: Response) => {
+app.get("/reports", [authenticate], (req: Request, res: Response) => {
   handleResponse(getReports(req.query, req.authenticatedUserId), res);
 });
 
 app.get(
-  "/api/reports/my-reports",
+  "/reports/my-reports",
   [authenticate],
   (req: Request, res: Response) => {
     handleResponse(
@@ -99,7 +110,7 @@ app.get(
 );
 
 app.get(
-  "/api/reports/:reportId",
+  "/reports/:reportId",
   [authenticate],
   (req: Request, res: Response) => {
     handleResponse(
@@ -110,7 +121,7 @@ app.get(
 );
 
 app.post(
-  "/api/reports",
+  "/reports",
   [authenticate, uploadMutlipleImages("images")],
   (req: Request, res: Response) => {
     handleResponse(
@@ -127,7 +138,7 @@ app.post(
 );
 
 app.put(
-  "/api/reports/:reportId",
+  "/reports/:reportId",
   [authenticate, uploadMutlipleImages("images")],
   (req: Request, res: Response) => {
     handleResponse(
@@ -143,7 +154,7 @@ app.put(
 );
 
 app.delete(
-  "/api/reports/:reportId",
+  "/reports/:reportId",
   [authenticate],
   (req: Request, res: Response) => {
     handleResponse(
@@ -155,25 +166,25 @@ app.delete(
 
 // USERS
 app.get(
-  "/api/users/current",
+  "/users/current",
   [authenticate],
   (req: Request, res: Response) => {
     handleResponse(getUser(req.authenticatedUserId), res);
   }
 );
 
-app.get("/api/users", (req: Request, res: Response) => {
+app.get("/users", (req: Request, res: Response) => {
   handleResponse(getUsers(), res);
 });
 
-app.get("/api/users/:userId", (req: Request, res: Response) => {
+app.get("/users/:userId", (req: Request, res: Response) => {
   handleResponse(getUser(parseInt(req.params.userId)), res);
 });
 
 // FRIENDS
 
 app.post(
-  "/api/friends",
+  "/friends",
   [authenticate],
   (req: Request, res: Response) => {
     handleResponse(
@@ -183,7 +194,7 @@ app.post(
   }
 );
 
-app.put("/api/friends", [authenticate], (req: Request, res: Response) => {
+app.put("/friends", [authenticate], (req: Request, res: Response) => {
   handleResponse(
     updateFriendStatus(
       req.authenticatedUserId,
@@ -195,7 +206,7 @@ app.put("/api/friends", [authenticate], (req: Request, res: Response) => {
 });
 
 app.get(
-  "/api/friends/requests",
+  "/friends/requests",
   [authenticate],
   (req: Request, res: Response) => {
     handleResponse(getFriendRequests(req.authenticatedUserId), res);
@@ -203,7 +214,7 @@ app.get(
 );
 
 app.get(
-  "/api/friends/pending",
+  "/friends/pending",
   [authenticate],
   (req: Request, res: Response) => {
     handleResponse(getPendingFriendRequests(req.authenticatedUserId), res);
@@ -211,23 +222,23 @@ app.get(
 );
 
 app.get(
-  "/api/friends/options",
+  "/friends/options",
   [authenticate],
   (req: Request, res: Response) => {
     handleResponse(getFriendOptions(req.authenticatedUserId), res);
   }
 );
 
-app.get("/api/friends", [authenticate], (req: Request, res: Response) => {
+app.get("/friends", [authenticate], (req: Request, res: Response) => {
   handleResponse(getFriends(req.authenticatedUserId), res);
 });
 
 // AUTH
-app.post("/api/auth/signup", (req: Request, res: Response) => {
+app.post("/auth/signup", (req: Request, res: Response) => {
   handleResponse(signUp(req.body), res);
 });
 
-app.post("/api/auth/login", (req: Request, res: Response) => {
+app.post("/auth/login", (req: Request, res: Response) => {
   handleResponse(login(req.body), res);
 });
 
