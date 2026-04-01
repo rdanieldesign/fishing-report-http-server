@@ -3,7 +3,7 @@ import multerS3Transform from "multer-s3-transform";
 import aws from "aws-sdk";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
-import { AWS_BUCKET } from "../secret";
+import { AWS_BUCKET } from "../config";
 
 const s3 = new aws.S3({ region: "us-east-1" });
 

@@ -1,4 +1,4 @@
-import { SECRET } from "../secret";
+import { SECRET } from "../config";
 import * as jwt from "jsonwebtoken";
 import {
   ICredentials,
