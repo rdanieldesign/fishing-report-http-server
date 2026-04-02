@@ -52,21 +52,23 @@ jobs:
             AWS_BUCKET=${{ secrets.AWS_BUCKET }}
             EOF
 
-      - name: Copy build to server
+      - name: Copy build and package files to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: dist/
+          source: dist/,package.json,package-lock.json
           target: /home/${{ secrets.SSH_USER }}/apps/fishing-report-http-server/
 
-      - name: Restart pm2
+      - name: Install production dependencies and restart pm2
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            cd /home/${{ secrets.SSH_USER }}/apps/fishing-report-http-server
+            /home/${{ secrets.SSH_USER }}/.nvm/versions/node/v20.20.2/bin/npm ci --omit=dev
             /home/${{ secrets.SSH_USER }}/.nvm/versions/node/v20.20.2/bin/pm2 delete fishing_report || true
-            cd /home/${{ secrets.SSH_USER }}/apps/fishing-report-http-server && /home/${{ secrets.SSH_USER }}/.nvm/versions/node/v20.20.2/bin/pm2 start dist/index.js --name fishing_report
+            /home/${{ secrets.SSH_USER }}/.nvm/versions/node/v20.20.2/bin/pm2 start dist/index.js --name fishing_report
