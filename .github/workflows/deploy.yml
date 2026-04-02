@@ -69,4 +69,4 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             pm2 delete fishing_report || true
-            pm2 start /home/${{ secrets.SSH_USER }}/apps/fishing-report-http-server/dist/index.js --name fishing_report
+            cd /home/${{ secrets.SSH_USER }}/apps/fishing-report-http-server && pm2 start dist/index.js --name fishing_report
