@@ -68,5 +68,5 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            pm2 delete fishing_report || true
-            cd /home/${{ secrets.SSH_USER }}/apps/fishing-report-http-server && pm2 start dist/index.js --name fishing_report
+            /home/${{ secrets.SSH_USER }}/.nvm/versions/node/v20.20.2/bin/pm2 delete fishing_report || true
+            cd /home/${{ secrets.SSH_USER }}/apps/fishing-report-http-server && /home/${{ secrets.SSH_USER }}/.nvm/versions/node/v20.20.2/bin/pm2 start dist/index.js --name fishing_report
