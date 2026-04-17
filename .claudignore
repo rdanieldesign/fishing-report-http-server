@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+secret.ts
+
+# Build and runtime outputs
+dist/
+build/
+*.log
+logs/
+
+# Version control
+.git/
+.gitignore
+
+# IDE and editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# PM2 and process management
+.pm2/
+
+# Misc
+.cache/
+.next/
+.nuxt/
+coverage/
