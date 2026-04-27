@@ -5,11 +5,13 @@ import { signTestToken } from "./helpers";
 
 jest.mock("../models/mysql-util");
 jest.mock("../services/image-service", () => ({
-  uploadMutlipleImages: () => (req: any, _res: any, next: any) => {
-    req.files = [];
-    next();
-  },
-  getSignedImageUrl: () => "https://mock-s3.example.com/image",
+  uploadMultipleImages: () => [
+    (req: any, _res: any, next: any) => {
+      req.uploadedImages = [];
+      next();
+    },
+  ],
+  getSignedImageUrl: async () => "https://mock-s3.example.com/image",
   deleteMultipleImages: jest.fn(),
   deleteSingleImage: jest.fn(),
 }));

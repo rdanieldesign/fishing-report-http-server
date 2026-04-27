@@ -27,7 +27,7 @@ import {
   getFriendOptions,
   getPendingFriendRequests,
 } from "./services/friend-service";
-import { uploadMutlipleImages } from "./services/image-service";
+import { uploadMultipleImages } from "./services/image-service";
 
 export const app = express();
 
@@ -105,7 +105,7 @@ router.get(
 
 router.post(
   "/reports",
-  [authenticate, uploadMutlipleImages("images")],
+  [authenticate, ...uploadMultipleImages("images")],
   (req: Request, res: Response) => {
     handleResponse(
       addReport(
@@ -113,7 +113,7 @@ router.post(
           ...req.body,
           authorId: req.authenticatedUserId,
         },
-        req.files as Express.MulterS3.File[],
+        req.uploadedImages,
       ),
       res,
     );
@@ -122,14 +122,14 @@ router.post(
 
 router.put(
   "/reports/:reportId",
-  [authenticate, uploadMutlipleImages("images")],
+  [authenticate, ...uploadMultipleImages("images")],
   (req: Request, res: Response) => {
     handleResponse(
       updateReport(
         req.params.reportId,
         req.body,
         req.authenticatedUserId,
-        req.files as Express.MulterS3.File[],
+        req.uploadedImages,
       ),
       res,
     );
