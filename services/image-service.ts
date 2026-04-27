@@ -1,84 +1,96 @@
 import multer from "multer";
-import multerS3Transform from "multer-s3-transform";
-import aws from "aws-sdk";
-import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
+import {
+  S3Client,
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  PutObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { v4 as uuidv4 } from "uuid";
+import { Request, Response, NextFunction } from "express";
 import { AWS_BUCKET } from "../config";
+import { IUploadedImage } from "../interfaces/uploaded-image";
 
-const s3 = new aws.S3({ region: "us-east-1" });
+const s3 = new S3Client({ region: "us-east-1" });
 
-const maxSize = 5 * 1000 * 1000;
+const memoryUpload = multer({
+  limits: { files: 5 },
+  fileFilter: (_req, file, next) => {
+    if (file.mimetype.startsWith("image/")) next(null, true);
+  },
+  storage: multer.memoryStorage(),
+});
 
-function uploadImage() {
-  return multer({
-    limits: {
-      // fileSize: maxSize,
-      files: 5,
-    },
-    fileFilter: function (req, file, next) {
-      const isPhoto = file.mimetype.startsWith("image/");
-      if (isPhoto) {
-        next(null, true); // null for error means it worked and it is fine to continue to next()
-      }
-    },
-    storage: multerS3Transform({
-      s3: s3,
-      bucket: AWS_BUCKET,
-      metadata: function (req, file, cb) {
-        cb(null, { fieldName: file.fieldname });
-      },
-      shouldTransform: function (req, file, cb) {
-        cb(null, /^image/i.test(file.mimetype));
-      },
-      transforms: [
-        {
-          id: "original",
-          key: function (req, file, cb) {
-            cb(null, uuidv4());
-          },
-          transform: function (req, file, cb) {
-            cb(null, sharp().resize({ width: 800 }).withMetadata());
-          },
-        },
-      ],
+async function transformAndUpload(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) {
+  const files = req.files
+    ? (req.files as Express.Multer.File[])
+    : req.file
+      ? [req.file]
+      : [];
+
+  if (!files.length) {
+    req.uploadedImages = [];
+    return next();
+  }
+
+  req.uploadedImages = await Promise.all(
+    files.map(async (file): Promise<IUploadedImage> => {
+      const key = uuidv4();
+      const resized = await sharp(file.buffer)
+        .resize({ width: 800 })
+        .withMetadata()
+        .toBuffer();
+
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: AWS_BUCKET,
+          Key: key,
+          Body: resized,
+          ContentType: file.mimetype,
+          Metadata: { fieldName: file.fieldname },
+        }),
+      );
+
+      return {
+        originalname: file.originalname,
+        key,
+        mimetype: file.mimetype,
+        size: resized.length,
+      };
     }),
-  });
+  );
+
+  next();
 }
 
 export function uploadSingleImage(propertyKey: string) {
-  return uploadImage().single(propertyKey);
+  return [memoryUpload.single(propertyKey), transformAndUpload];
 }
 
-export function uploadMutlipleImages(propertyKey: string) {
-  return uploadImage().array(propertyKey);
+export function uploadMultipleImages(propertyKey: string) {
+  return [memoryUpload.array(propertyKey), transformAndUpload];
 }
 
-export function getSignedImageUrl(imageKey: string): string {
-  return s3.getSignedUrl("getObject", {
-    Bucket: AWS_BUCKET,
-    Key: imageKey,
-    Expires: 5 * 60, // 5 minutes
-  });
+export async function getSignedImageUrl(imageKey: string): Promise<string> {
+  const command = new GetObjectCommand({ Bucket: AWS_BUCKET, Key: imageKey });
+  return getSignedUrl(s3 as any, command as any, { expiresIn: 5 * 60 });
 }
 
-export function deleteSingleImage(imageId: string) {
-  return s3.deleteObject({ Bucket: AWS_BUCKET, Key: imageId }, (err) => {
-    if (err) {
-      console.log(err);
-    }
-  });
+export async function deleteSingleImage(imageId: string): Promise<void> {
+  await s3.send(new DeleteObjectCommand({ Bucket: AWS_BUCKET, Key: imageId }));
 }
 
-export function deleteMultipleImages(imageIds: string[]) {
-  return s3.deleteObjects(
-    {
+export async function deleteMultipleImages(imageIds: string[]): Promise<void> {
+  await s3.send(
+    new DeleteObjectsCommand({
       Bucket: AWS_BUCKET,
-      Delete: { Objects: imageIds.map((imageId) => ({ Key: imageId })) },
-    },
-    (err) => {
-      if (err) {
-        console.log(err);
-      }
-    },
+      Delete: { Objects: imageIds.map((Key) => ({ Key })) },
+    }),
   );
 }
