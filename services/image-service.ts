@@ -50,7 +50,6 @@ export function uploadSingleImage(propertyKey: string) {
 }
 
 export function uploadMutlipleImages(propertyKey: string) {
-  console.log("uploading images");
   return uploadImage().array(propertyKey);
 }
 
@@ -80,6 +79,6 @@ export function deleteMultipleImages(imageIds: string[]) {
       if (err) {
         console.log(err);
       }
-    }
+    },
   );
 }
