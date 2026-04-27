@@ -1,14 +1,18 @@
 ## Setup
 
-Create a `.env` file at the root of the project with the following variables (see `.env.example` for reference):
+Copy `.env.example` to `.env` at the root of the project and fill in the values:
 
 ```
-JWT_SECRET=<your-jwt-secret>
-MYSQL_HOST=<your-mysql-host>
-MYSQL_USERNAME=<your-mysql-username>
-MYSQL_PASSWORD=<your-mysql-password>
-AWS_BUCKET=<your-aws-s3-bucket>
+JWT_SECRET=         # Secret used to sign JWT tokens
+MYSQL_HOST=         # MySQL server hostname (e.g. localhost)
+MYSQL_USERNAME=     # MySQL user
+MYSQL_PASSWORD=     # MySQL password
+AWS_BUCKET=         # S3 bucket name for image uploads
+AWS_ACCESS_KEY_ID=  # AWS IAM access key ID
+AWS_SECRET_ACCESS_KEY= # AWS IAM secret access key
 ```
+
+AWS credentials can be found in `~/.aws/credentials` on your local machine, or retrieved from the AWS IAM console. The IAM user needs `s3:GetObject`, `s3:PutObject`, and `s3:DeleteObject` permissions on the configured bucket.
 
 ## Available Scripts
 
@@ -32,4 +36,5 @@ Ensure the following secrets are configured in your GitHub repository settings:
 - `SSH_PRIVATE_KEY` — SSH private key for authentication
 - `JWT_SECRET` — JWT signing secret
 - `MYSQL_HOST`, `MYSQL_USERNAME`, `MYSQL_PASSWORD` — Database credentials
-- `AWS_BUCKET` — S3 bucket for file uploads
+- `AWS_BUCKET` — S3 bucket name for image uploads
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` — AWS IAM credentials with S3 access
