@@ -72,5 +72,7 @@ jobs:
           script: |
             cd /home/${{ secrets.SSH_USER }}/apps/fishing-report-http-server
             /home/${{ secrets.SSH_USER }}/.nvm/versions/node/v20.20.2/bin/npm ci --omit=dev
+            set -a && source .env && set +a
             /home/${{ secrets.SSH_USER }}/.nvm/versions/node/v20.20.2/bin/pm2 delete fishing_report || true
             /home/${{ secrets.SSH_USER }}/.nvm/versions/node/v20.20.2/bin/pm2 start dist/index.js --name fishing_report
+            /home/${{ secrets.SSH_USER }}/.nvm/versions/node/v20.20.2/bin/pm2 save
