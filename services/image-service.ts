@@ -79,7 +79,7 @@ export function uploadMultipleImages(propertyKey: string) {
 
 export async function getSignedImageUrl(imageKey: string): Promise<string> {
   const command = new GetObjectCommand({ Bucket: AWS_BUCKET, Key: imageKey });
-  return getSignedUrl(s3 as any, command as any, { expiresIn: 5 * 60 });
+  return getSignedUrl(s3, command, { expiresIn: 5 * 60 });
 }
 
 export async function deleteSingleImage(imageId: string): Promise<void> {
