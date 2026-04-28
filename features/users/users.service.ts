@@ -1,4 +1,4 @@
-import { sendUnauthorizedMessage } from "../../shared/errors";
+import { IError } from "./../../shared/errors";
 import {
   addUser as addUserRepo,
   getUserWithPasswordByEmail as getUserWithPasswordByEmailRepo,
@@ -8,6 +8,14 @@ import {
   type User,
   type UserPublic,
 } from "./users.repository";
+
+function sendUnauthorizedMessage(): Promise<never> {
+  const error: IError = {
+    status: 403,
+    message: "You are not authorized to view this user.",
+  };
+  return Promise.reject(error);
+}
 
 export function addUser(newUser: NewUser): Promise<number> {
   return addUserRepo(newUser);
