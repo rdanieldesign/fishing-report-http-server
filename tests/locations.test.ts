@@ -1,10 +1,8 @@
 import request from "supertest";
 import { app } from "../app";
-import { queryToPromise } from "../models/mysql-util";
+import * as locationsRepo from "../features/locations/locations.repository";
 
-jest.mock("../models/mysql-util");
-
-const mockQuery = queryToPromise as jest.Mock;
+jest.mock("../features/locations/locations.repository");
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -12,13 +10,15 @@ beforeEach(() => {
 
 describe("GET /api/locations", () => {
   it("returns 200 and an array", async () => {
-    mockQuery.mockResolvedValueOnce([
-      {
-        id: 1,
-        name: "Avondale Lake",
-        googleMapsLink: "https://maps.example.com",
-      },
-    ]);
+    jest
+      .spyOn(locationsRepo, "getLocations")
+      .mockResolvedValueOnce([
+        {
+          id: 1,
+          name: "Avondale Lake",
+          googleMapsLink: "https://maps.example.com",
+        },
+      ]);
 
     const res = await request(app).get("/api/locations");
 
@@ -29,7 +29,13 @@ describe("GET /api/locations", () => {
 
 describe("GET /api/locations/:id", () => {
   it("returns 200 and an object with id when the location exists", async () => {
-    mockQuery.mockResolvedValueOnce([{ id: 1, name: "Avondale Lake" }]);
+    jest
+      .spyOn(locationsRepo, "getLocation")
+      .mockResolvedValueOnce({
+        id: 1,
+        name: "Avondale Lake",
+        googleMapsLink: "https://maps.example.com",
+      });
 
     const res = await request(app).get("/api/locations/1");
 
@@ -38,7 +44,7 @@ describe("GET /api/locations/:id", () => {
   });
 
   it("returns 200 and null when the location does not exist", async () => {
-    mockQuery.mockResolvedValueOnce([]);
+    jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce(undefined);
 
     const res = await request(app).get("/api/locations/999");
 
@@ -49,7 +55,7 @@ describe("GET /api/locations/:id", () => {
 
 describe("POST /api/locations", () => {
   it("returns 200 for a valid body", async () => {
-    mockQuery.mockResolvedValueOnce({ insertId: 1 });
+    jest.spyOn(locationsRepo, "addLocation").mockResolvedValueOnce(1);
 
     const res = await request(app)
       .post("/api/locations")
@@ -61,7 +67,9 @@ describe("POST /api/locations", () => {
 
 describe("PUT /api/locations/:id", () => {
   it("returns 200", async () => {
-    mockQuery.mockResolvedValueOnce({});
+    jest
+      .spyOn(locationsRepo, "updateLocation")
+      .mockResolvedValueOnce(undefined);
 
     const res = await request(app).put("/api/locations/1").send({
       name: "Updated Lake",
@@ -74,7 +82,9 @@ describe("PUT /api/locations/:id", () => {
 
 describe("DELETE /api/locations/:id", () => {
   it("returns 200", async () => {
-    mockQuery.mockResolvedValueOnce({});
+    jest
+      .spyOn(locationsRepo, "deleteLocation")
+      .mockResolvedValueOnce(undefined);
 
     const res = await request(app).delete("/api/locations/1");
 

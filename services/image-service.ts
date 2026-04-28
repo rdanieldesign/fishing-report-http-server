@@ -11,7 +11,12 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import { Request, Response, NextFunction } from "express";
 import { AWS_BUCKET } from "../config";
-import { IUploadedImage } from "../interfaces/uploaded-image";
+export interface IUploadedImage {
+  originalname: string;
+  key: string;
+  mimetype: string;
+  size: number;
+}
 
 const s3 = new S3Client({ region: "us-east-1" });
 

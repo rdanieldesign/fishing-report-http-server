@@ -1,11 +1,9 @@
-import request from "supertest";
 import * as bcrypt from "bcrypt";
+import request from "supertest";
 import { app } from "../app";
-import { queryToPromise } from "../models/mysql-util";
+import * as usersRepo from "../features/users/users.repository";
 
-jest.mock("../models/mysql-util");
-
-const mockQuery = queryToPromise as jest.Mock;
+jest.mock("../features/users/users.repository");
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -13,9 +11,10 @@ beforeEach(() => {
 
 describe("POST /api/auth/signup", () => {
   it("returns 200 and a JWT string for a valid new user", async () => {
-    mockQuery
-      .mockResolvedValueOnce([]) // getUserWithPasswordByEmail: no existing user
-      .mockResolvedValueOnce({ insertId: 1 }); // addUser
+    jest
+      .spyOn(usersRepo, "getUserWithPasswordByEmail")
+      .mockResolvedValueOnce(undefined);
+    jest.spyOn(usersRepo, "addUser").mockResolvedValueOnce(1);
 
     const res = await request(app)
       .post("/api/auth/signup")
@@ -26,7 +25,12 @@ describe("POST /api/auth/signup", () => {
   });
 
   it("returns 400 for a duplicate email", async () => {
-    mockQuery.mockResolvedValueOnce([{ id: 1, email: "john@test.com" }]);
+    jest.spyOn(usersRepo, "getUserWithPasswordByEmail").mockResolvedValueOnce({
+      id: 1,
+      name: "John",
+      email: "john@test.com",
+      password: "hashed",
+    });
 
     const res = await request(app)
       .post("/api/auth/signup")
@@ -39,9 +43,12 @@ describe("POST /api/auth/signup", () => {
 describe("POST /api/auth/login", () => {
   it("returns 200 and a JWT string for valid credentials", async () => {
     const hashed = bcrypt.hashSync("password123", 1);
-    mockQuery.mockResolvedValueOnce([
-      { id: 1, email: "john@test.com", password: hashed },
-    ]);
+    jest.spyOn(usersRepo, "getUserWithPasswordByEmail").mockResolvedValueOnce({
+      id: 1,
+      name: "John",
+      email: "john@test.com",
+      password: hashed,
+    });
 
     const res = await request(app)
       .post("/api/auth/login")
@@ -53,9 +60,12 @@ describe("POST /api/auth/login", () => {
 
   it("returns 500 for wrong password", async () => {
     const hashed = bcrypt.hashSync("differentpassword", 1);
-    mockQuery.mockResolvedValueOnce([
-      { id: 1, email: "john@test.com", password: hashed },
-    ]);
+    jest.spyOn(usersRepo, "getUserWithPasswordByEmail").mockResolvedValueOnce({
+      id: 1,
+      name: "John",
+      email: "john@test.com",
+      password: hashed,
+    });
 
     const res = await request(app)
       .post("/api/auth/login")
@@ -65,7 +75,9 @@ describe("POST /api/auth/login", () => {
   });
 
   it("returns 400 for an unknown email", async () => {
-    mockQuery.mockResolvedValueOnce([]);
+    jest
+      .spyOn(usersRepo, "getUserWithPasswordByEmail")
+      .mockResolvedValueOnce(undefined);
 
     const res = await request(app)
       .post("/api/auth/login")
@@ -76,7 +88,6 @@ describe("POST /api/auth/login", () => {
 
   it("returns 500 for missing fields", async () => {
     const res = await request(app).post("/api/auth/login").send({});
-
     expect(res.status).toBe(500);
   });
 });

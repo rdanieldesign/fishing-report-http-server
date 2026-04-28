@@ -1,9 +1,9 @@
 import request from "supertest";
 import { app } from "../app";
-import { queryToPromise, multiQueryToPromise } from "../models/mysql-util";
+import * as reportsRepo from "../features/reports/reports.repository";
 import { signTestToken } from "./helpers";
 
-jest.mock("../models/mysql-util");
+jest.mock("../features/reports/reports.repository");
 jest.mock("../services/image-service", () => ({
   uploadMultipleImages: () => [
     (req: any, _res: any, next: any) => {
@@ -16,8 +16,6 @@ jest.mock("../services/image-service", () => ({
   deleteSingleImage: jest.fn(),
 }));
 
-const mockQuery = queryToPromise as jest.Mock;
-const mockMultiQuery = multiQueryToPromise as jest.Mock;
 const USER_ID = 1;
 const token = signTestToken(USER_ID);
 
@@ -39,7 +37,7 @@ describe("Authentication middleware — GET /api/reports", () => {
   });
 
   it("passes through with a valid token", async () => {
-    mockMultiQuery.mockResolvedValueOnce([]);
+    jest.spyOn(reportsRepo, "getReports").mockResolvedValueOnce([]);
 
     const res = await request(app)
       .get("/api/reports")
@@ -51,7 +49,9 @@ describe("Authentication middleware — GET /api/reports", () => {
 
 describe("GET /api/reports", () => {
   it("returns 200 and an array for an authenticated user", async () => {
-    mockMultiQuery.mockResolvedValueOnce([{ id: 1, authorId: USER_ID }]);
+    jest
+      .spyOn(reportsRepo, "getReports")
+      .mockResolvedValueOnce([{ id: 1, authorId: USER_ID } as any]);
 
     const res = await request(app)
       .get("/api/reports")
@@ -64,7 +64,9 @@ describe("GET /api/reports", () => {
 
 describe("GET /api/reports/my-reports", () => {
   it("returns 200 and an array filtered to current user", async () => {
-    mockMultiQuery.mockResolvedValueOnce([{ id: 1, authorId: USER_ID }]);
+    jest
+      .spyOn(reportsRepo, "getReports")
+      .mockResolvedValueOnce([{ id: 1, authorId: USER_ID } as any]);
 
     const res = await request(app)
       .get("/api/reports/my-reports")
@@ -77,9 +79,11 @@ describe("GET /api/reports/my-reports", () => {
 
 describe("GET /api/reports/:id", () => {
   it("returns 200 and an object when the user can see the report", async () => {
-    mockMultiQuery.mockResolvedValueOnce([
-      { id: 1, authorId: USER_ID, imageIds: null },
-    ]);
+    jest.spyOn(reportsRepo, "getReportById").mockResolvedValueOnce({
+      id: 1,
+      authorId: USER_ID,
+      imageIds: null,
+    } as any);
 
     const res = await request(app)
       .get("/api/reports/1")
@@ -90,7 +94,7 @@ describe("GET /api/reports/:id", () => {
   });
 
   it("returns 200 and null when the user cannot see the report", async () => {
-    mockMultiQuery.mockResolvedValueOnce([]);
+    jest.spyOn(reportsRepo, "getReportById").mockResolvedValueOnce(undefined);
 
     const res = await request(app)
       .get("/api/reports/99")
@@ -103,7 +107,7 @@ describe("GET /api/reports/:id", () => {
 
 describe("POST /api/reports", () => {
   it("returns 200", async () => {
-    mockQuery.mockResolvedValueOnce({ insertId: 1 });
+    jest.spyOn(reportsRepo, "addReport").mockResolvedValueOnce(1);
 
     const res = await request(app)
       .post("/api/reports")
@@ -129,10 +133,12 @@ describe("PUT /api/reports/:id", () => {
   };
 
   it("returns 200 when updating own report", async () => {
-    mockMultiQuery.mockResolvedValueOnce([
-      { id: 1, authorId: USER_ID, imageIds: null },
-    ]);
-    mockQuery.mockResolvedValueOnce({});
+    jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
+      id: 1,
+      authorId: USER_ID,
+      imageIds: null,
+    } as any);
+    jest.spyOn(reportsRepo, "updateReport").mockResolvedValueOnce(undefined);
 
     const res = await request(app)
       .put("/api/reports/1")
@@ -143,9 +149,11 @@ describe("PUT /api/reports/:id", () => {
   });
 
   it("returns 403 when updating another user's report", async () => {
-    mockMultiQuery.mockResolvedValueOnce([
-      { id: 1, authorId: 999, imageIds: null },
-    ]);
+    jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
+      id: 1,
+      authorId: 999,
+      imageIds: null,
+    } as any);
 
     const res = await request(app)
       .put("/api/reports/1")
@@ -158,10 +166,12 @@ describe("PUT /api/reports/:id", () => {
 
 describe("DELETE /api/reports/:id", () => {
   it("returns 200 when deleting own report", async () => {
-    mockMultiQuery.mockResolvedValueOnce([
-      { id: 1, authorId: USER_ID, imageIds: null },
-    ]);
-    mockQuery.mockResolvedValueOnce({});
+    jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
+      id: 1,
+      authorId: USER_ID,
+      imageIds: null,
+    } as any);
+    jest.spyOn(reportsRepo, "deleteReport").mockResolvedValueOnce(undefined);
 
     const res = await request(app)
       .delete("/api/reports/1")
@@ -171,9 +181,11 @@ describe("DELETE /api/reports/:id", () => {
   });
 
   it("returns 403 when deleting another user's report", async () => {
-    mockMultiQuery.mockResolvedValueOnce([
-      { id: 1, authorId: 999, imageIds: null },
-    ]);
+    jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
+      id: 1,
+      authorId: 999,
+      imageIds: null,
+    } as any);
 
     const res = await request(app)
       .delete("/api/reports/1")

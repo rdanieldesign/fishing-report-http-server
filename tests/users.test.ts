@@ -1,11 +1,9 @@
 import request from "supertest";
 import { app } from "../app";
-import { queryToPromise } from "../models/mysql-util";
+import * as usersRepo from "../features/users/users.repository";
 import { signTestToken } from "./helpers";
 
-jest.mock("../models/mysql-util");
-
-const mockQuery = queryToPromise as jest.Mock;
+jest.mock("../features/users/users.repository");
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -25,9 +23,11 @@ describe("Authentication middleware — GET /api/users/current", () => {
   });
 
   it("passes through with a valid token", async () => {
-    mockQuery.mockResolvedValueOnce([
-      { id: 1, name: "John", email: "john@test.com" },
-    ]);
+    jest.spyOn(usersRepo, "getUser").mockResolvedValueOnce({
+      id: 1,
+      name: "John",
+      email: "john@test.com",
+    });
 
     const res = await request(app)
       .get("/api/users/current")
@@ -39,9 +39,9 @@ describe("Authentication middleware — GET /api/users/current", () => {
 
 describe("GET /api/users", () => {
   it("returns 200 and an array (no auth required)", async () => {
-    mockQuery.mockResolvedValueOnce([
-      { id: 1, name: "John", email: "john@test.com" },
-    ]);
+    jest
+      .spyOn(usersRepo, "getUsers")
+      .mockResolvedValueOnce([{ id: 1, name: "John", email: "john@test.com" }]);
 
     const res = await request(app).get("/api/users");
 
@@ -52,9 +52,9 @@ describe("GET /api/users", () => {
 
 describe("GET /api/users/:id", () => {
   it("returns 200 and an object when user exists", async () => {
-    mockQuery.mockResolvedValueOnce([
-      { id: 1, name: "John", email: "john@test.com" },
-    ]);
+    jest
+      .spyOn(usersRepo, "getUser")
+      .mockResolvedValueOnce({ id: 1, name: "John", email: "john@test.com" });
 
     const res = await request(app).get("/api/users/1");
 
@@ -63,7 +63,7 @@ describe("GET /api/users/:id", () => {
   });
 
   it("returns 200 and null when user does not exist", async () => {
-    mockQuery.mockResolvedValueOnce([]);
+    jest.spyOn(usersRepo, "getUser").mockResolvedValueOnce(undefined);
 
     const res = await request(app).get("/api/users/999");
 
@@ -74,9 +74,9 @@ describe("GET /api/users/:id", () => {
 
 describe("GET /api/users/current", () => {
   it("returns 200 with id, email, and name for an authenticated user", async () => {
-    mockQuery.mockResolvedValueOnce([
-      { id: 1, name: "John", email: "john@test.com" },
-    ]);
+    jest
+      .spyOn(usersRepo, "getUser")
+      .mockResolvedValueOnce({ id: 1, name: "John", email: "john@test.com" });
 
     const res = await request(app)
       .get("/api/users/current")

@@ -1,11 +1,11 @@
-import { Response, NextFunction, Request } from "express-serve-static-core";
-import { verifyToken } from "../services/auth-service";
-import { IVerifiedTokenResponse } from "../interfaces/auth-interface";
+import { NextFunction, Request, Response } from "express-serve-static-core";
+import { verifyToken } from "../features/auth/auth.service";
+import type { IVerifiedTokenResponse } from "../features/auth/auth.types";
 
 export async function authenticate(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   const token = req.headers["x-access-token"] as string;
   let tokenResponse: IVerifiedTokenResponse;
@@ -18,7 +18,6 @@ export async function authenticate(
     req.authenticatedUserId = tokenResponse.decodedToken?.userId;
     next();
   } else {
-    console.log("failure");
     res.status(tokenResponse.status || 401).json(tokenResponse.message);
   }
 }
