@@ -1,12 +1,11 @@
 import request from "supertest";
 import { app } from "../app";
-import { queryToPromise } from "../models/mysql-util";
 import { FriendStatus } from "../enums/friend-enum";
+import * as friendsRepo from "../features/friends/friends.repository";
 import { signTestToken } from "./helpers";
 
-jest.mock("../models/mysql-util");
+jest.mock("../features/friends/friends.repository");
 
-const mockQuery = queryToPromise as jest.Mock;
 const USER_ID = 1;
 const FRIEND_ID = 2;
 const token = signTestToken(USER_ID);
@@ -29,7 +28,7 @@ describe("Authentication middleware — GET /api/friends", () => {
   });
 
   it("passes through with a valid token", async () => {
-    mockQuery.mockResolvedValueOnce([]);
+    jest.spyOn(friendsRepo, "getFriends").mockResolvedValueOnce([]);
 
     const res = await request(app)
       .get("/api/friends")
@@ -41,7 +40,7 @@ describe("Authentication middleware — GET /api/friends", () => {
 
 describe("GET /api/friends", () => {
   it("returns 200 and an array", async () => {
-    mockQuery.mockResolvedValueOnce([]);
+    jest.spyOn(friendsRepo, "getFriends").mockResolvedValueOnce([]);
 
     const res = await request(app)
       .get("/api/friends")
@@ -54,7 +53,7 @@ describe("GET /api/friends", () => {
 
 describe("GET /api/friends/requests", () => {
   it("returns 200 and an array", async () => {
-    mockQuery.mockResolvedValueOnce([]);
+    jest.spyOn(friendsRepo, "getFriendRequests").mockResolvedValueOnce([]);
 
     const res = await request(app)
       .get("/api/friends/requests")
@@ -67,7 +66,9 @@ describe("GET /api/friends/requests", () => {
 
 describe("GET /api/friends/pending", () => {
   it("returns 200 and an array", async () => {
-    mockQuery.mockResolvedValueOnce([]);
+    jest
+      .spyOn(friendsRepo, "getFriendPendingRequests")
+      .mockResolvedValueOnce([]);
 
     const res = await request(app)
       .get("/api/friends/pending")
@@ -80,7 +81,7 @@ describe("GET /api/friends/pending", () => {
 
 describe("GET /api/friends/options", () => {
   it("returns 200 and an array", async () => {
-    mockQuery.mockResolvedValueOnce([]);
+    jest.spyOn(friendsRepo, "getFriendOptions").mockResolvedValueOnce([]);
 
     const res = await request(app)
       .get("/api/friends/options")
@@ -93,9 +94,10 @@ describe("GET /api/friends/options", () => {
 
 describe("POST /api/friends", () => {
   it("returns 200 when creating a friend request", async () => {
-    mockQuery
-      .mockResolvedValueOnce([]) // getFriendship: no existing friendship
-      .mockResolvedValueOnce({}); // createFriendship
+    jest.spyOn(friendsRepo, "getFriendship").mockResolvedValueOnce(undefined);
+    jest
+      .spyOn(friendsRepo, "createFriendship")
+      .mockResolvedValueOnce(undefined);
 
     const res = await request(app)
       .post("/api/friends")
@@ -108,17 +110,15 @@ describe("POST /api/friends", () => {
 
 describe("PUT /api/friends", () => {
   it("returns 200 when the correct user updates the friendship", async () => {
-    // Friendship where actionUserId matches the authenticated user
-    mockQuery
-      .mockResolvedValueOnce([
-        {
-          userOneId: USER_ID,
-          userTwoId: FRIEND_ID,
-          status: FriendStatus.Requested,
-          actionUserId: USER_ID,
-        },
-      ]) // getFriendship
-      .mockResolvedValueOnce({}); // updateFriendStatus
+    jest.spyOn(friendsRepo, "getFriendship").mockResolvedValueOnce({
+      userOneId: USER_ID,
+      userTwoId: FRIEND_ID,
+      status: FriendStatus.Requested,
+      actionUserId: USER_ID,
+    });
+    jest
+      .spyOn(friendsRepo, "updateFriendStatus")
+      .mockResolvedValueOnce(undefined);
 
     const res = await request(app)
       .put("/api/friends")
@@ -129,15 +129,12 @@ describe("PUT /api/friends", () => {
   });
 
   it("returns 403 when the wrong user tries to update the friendship", async () => {
-    // Friendship where actionUserId does NOT match the authenticated user
-    mockQuery.mockResolvedValueOnce([
-      {
-        userOneId: USER_ID,
-        userTwoId: FRIEND_ID,
-        status: FriendStatus.Requested,
-        actionUserId: FRIEND_ID, // not USER_ID
-      },
-    ]);
+    jest.spyOn(friendsRepo, "getFriendship").mockResolvedValueOnce({
+      userOneId: USER_ID,
+      userTwoId: FRIEND_ID,
+      status: FriendStatus.Requested,
+      actionUserId: FRIEND_ID, // not USER_ID
+    });
 
     const res = await request(app)
       .put("/api/friends")
