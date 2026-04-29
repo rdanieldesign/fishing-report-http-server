@@ -1,8 +1,7 @@
 import { builder } from "../../graphql/builder";
-import { db } from "../../db";
+import { getReports } from "./reports.service";
 
-// This tells Pothos how to map the 'reports' table to a GraphQL 'Report' type
-builder.drizzleObject("reports", {
+export const ReportType = builder.drizzleObject("reports", {
   name: "Report",
   fields: (t) => ({
     id: t.exposeInt("id"),
@@ -10,21 +9,16 @@ builder.drizzleObject("reports", {
     catchCount: t.exposeInt("catchCount"),
     notes: t.exposeString("notes"),
     authorId: t.exposeInt("authorId"),
-    imageIds: t.exposeString("imageIds"),
-    // You can also add custom fields that aren't in the DB
-    // upperCaseEmail: t.string({
-    //   resolve: (user) => user.email.toUpperCase(),
-    // }),
+    imageIds: t.expose("imageIds", { type: "JSON", nullable: true }),
   }),
 });
 
-// Add a query to fetch all reports
 builder.queryField("allReports", (t) =>
   t.drizzleField({
-    type: ["reports"], // Returns an array of Report objects
+    type: [ReportType],
     resolve: async (query, root, args, ctx, info) => {
-      // Drizzle handles the heavy lifting here
-      return await db.query.reports.findMany(query());
+      // TODO: pass query to orm to only select requested fields
+      return getReports({}, parseInt(ctx.currentUserId as string));
     },
   }),
 );
