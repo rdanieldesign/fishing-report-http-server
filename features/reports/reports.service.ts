@@ -11,7 +11,6 @@ import {
   getReportById,
   getReportByIdForOwnership,
   getReportDetails,
-  getReports as getReportsRepo,
   updateReport as updateReportRepo,
   type Report,
   type ReportDetail,
@@ -34,21 +33,11 @@ function reportBelongsToUser(report: Report, userId: number): boolean {
 }
 
 export function getReports(
-  queryParams: ParsedQs,
+  params: { authorId?: number; locationId?: number } = {},
   currentUserId: number | undefined,
 ): Promise<Report[] | ReportDetail[]> {
   if (!currentUserId) return sendUnauthorizedMessage();
-
-  const params: { authorId?: number; locationId?: number } = {};
-  if (queryParams.authorId)
-    params.authorId = parseInt(queryParams.authorId as string);
-  if (queryParams.locationId)
-    params.locationId = parseInt(queryParams.locationId as string);
-
-  if (queryParams.details === "true") {
-    return getReportDetails(params, currentUserId);
-  }
-  return getReportsRepo(params, currentUserId);
+  return getReportDetails(params, currentUserId);
 }
 
 export async function getReport(

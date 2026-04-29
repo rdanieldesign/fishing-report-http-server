@@ -29,3 +29,5 @@ export const friends = mysqlTable("friends", {
   status: int("status").notNull(),
   actionUserId: int("actionUserId").notNull(),
 });
+
+export const schema = { users, locations, reports, friends };

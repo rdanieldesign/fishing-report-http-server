@@ -37,7 +37,7 @@ describe("Authentication middleware — GET /api/reports", () => {
   });
 
   it("passes through with a valid token", async () => {
-    jest.spyOn(reportsRepo, "getReports").mockResolvedValueOnce([]);
+    jest.spyOn(reportsRepo, "getReportDetails").mockResolvedValueOnce([]);
 
     const res = await request(app)
       .get("/api/reports")
@@ -50,7 +50,7 @@ describe("Authentication middleware — GET /api/reports", () => {
 describe("GET /api/reports", () => {
   it("returns 200 and an array for an authenticated user", async () => {
     jest
-      .spyOn(reportsRepo, "getReports")
+      .spyOn(reportsRepo, "getReportDetails")
       .mockResolvedValueOnce([{ id: 1, authorId: USER_ID } as any]);
 
     const res = await request(app)
@@ -65,7 +65,7 @@ describe("GET /api/reports", () => {
 describe("GET /api/reports/my-reports", () => {
   it("returns 200 and an array filtered to current user", async () => {
     jest
-      .spyOn(reportsRepo, "getReports")
+      .spyOn(reportsRepo, "getReportDetails")
       .mockResolvedValueOnce([{ id: 1, authorId: USER_ID } as any]);
 
     const res = await request(app)
