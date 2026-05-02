@@ -4,11 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "concurrently 'tsc -w' 'nodemon dist/index.js' 'nodemon dist/workers/usgs.worker.js'",
+    "dev:main": "concurrently 'tsc -w' 'nodemon dist/index.js'",
+    "dev:worker": "concurrently 'tsc -w' 'nodemon dist/workers/usgs.worker.js'",
+    "migrate": "drizzle-kit migrate",
     "start": "tsc && node dist/index.js",
-    "build": "tsc",
-    "test": "jest",
-    "dev": "concurrently 'tsc -w' 'nodemon dist/index.js'",
-    "dev:worker": "nodemon --watch 'workers/**/*.ts' --watch 'features/usgs/**/*.ts' --ext ts --exec ts-node workers/usgs.worker.ts"
+    "start:worker": "node dist/workers/usgs.worker.js",
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",

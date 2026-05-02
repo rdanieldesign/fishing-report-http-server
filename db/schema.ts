@@ -1,4 +1,11 @@
-import { int, mysqlTable, text, varchar, date } from "drizzle-orm/mysql-core";
+import {
+  int,
+  mysqlTable,
+  text,
+  varchar,
+  date,
+  decimal,
+} from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: int("id").primaryKey().autoincrement(),
@@ -11,6 +18,7 @@ export const locations = mysqlTable("locations", {
   id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
   googleMapsLink: varchar("googleMapsLink", { length: 500 }).notNull(),
+  usgsLocationId: varchar("usgs_location_id", { length: 50 }),
 });
 
 export const reports = mysqlTable("reports", {
@@ -30,4 +38,18 @@ export const friends = mysqlTable("friends", {
   actionUserId: int("actionUserId").notNull(),
 });
 
-export const schema = { users, locations, reports, friends };
+export const usgsReadings = mysqlTable("usgs_readings", {
+  id: varchar("id", { length: 100 }).notNull(),
+  postId: int("post_id", { unsigned: true })
+    .notNull()
+    .references(() => reports.id, { onDelete: "cascade" }),
+  parameterCode: varchar("parameter_code", { length: 10 }).notNull(),
+  computationIdentifier: varchar("computation_identifier", {
+    length: 100,
+  }).notNull(),
+  parameterName: varchar("parameter_name", { length: 100 }).notNull(),
+  value: decimal("value", { precision: 12, scale: 3 }).notNull(),
+  unit: varchar("unit", { length: 20 }).notNull(),
+});
+
+export const schema = { users, locations, reports, friends, usgsReadings };

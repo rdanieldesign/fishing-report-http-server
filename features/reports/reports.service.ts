@@ -15,6 +15,8 @@ import {
   type Report,
   type ReportDetail,
 } from "./reports.repository";
+import { usgsQueue } from "../../queue/usgs.queue";
+import { getLocation } from "../locations/locations.repository";
 
 export type ReportWithImages = Omit<ReportDetail, "imageIds"> & {
   images?: { imageId: string; imageURL: string }[];
@@ -69,12 +71,23 @@ export async function getReport(
   };
 }
 
-export function addReport(
+export async function addReport(
   newReport: Omit<Report, "id" | "imageIds"> & { notes: string },
   images: IUploadedImage[],
 ): Promise<number> {
   const imageIds = JSON.stringify(images.map((img) => img.key));
-  return addReportRepo({ ...newReport, imageIds });
+  const reportId = await addReportRepo({ ...newReport, imageIds });
+
+  const location = await getLocation(newReport.locationId);
+  if (location?.usgsLocationId) {
+    usgsQueue.add("fetch-usgs", {
+      postId: reportId,
+      usgsLocationId: location.usgsLocationId,
+      reportDate: newReport.date,
+    });
+  }
+
+  return reportId;
 }
 
 export async function updateReport(
