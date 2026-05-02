@@ -7,6 +7,7 @@
     "dev": "concurrently 'tsc -w' 'nodemon dist/index.js' 'nodemon dist/workers/usgs.worker.js'",
     "dev:main": "concurrently 'tsc -w' 'nodemon dist/index.js'",
     "dev:worker": "concurrently 'tsc -w' 'nodemon dist/workers/usgs.worker.js'",
+    "build": "tsc",
     "migrate": "drizzle-kit migrate",
     "start": "tsc && node dist/index.js",
     "start:worker": "node dist/workers/usgs.worker.js",
