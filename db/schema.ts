@@ -39,7 +39,7 @@ export const friends = mysqlTable("friends", {
 });
 
 export const usgsReadings = mysqlTable("usgs_readings", {
-  id: varchar("id", { length: 100 }).notNull(),
+  id: varchar("id", { length: 100 }).primaryKey(),
   postId: int("post_id", { unsigned: true })
     .notNull()
     .references(() => reports.id, { onDelete: "cascade" }),

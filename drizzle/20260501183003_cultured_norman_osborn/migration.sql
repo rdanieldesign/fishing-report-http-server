@@ -1,4 +1,4 @@
-ALTER TABLE `locations` ADD COLUMN IF NOT EXISTS `usgs_location_id` varchar(50);
+ALTER TABLE `locations` ADD COLUMN `usgs_location_id` varchar(50);
 
 CREATE TABLE IF NOT EXISTS `usgs_readings` (
   `id` varchar(100) NOT NULL,
