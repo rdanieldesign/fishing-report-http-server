@@ -144,7 +144,7 @@ export async function getReportById(
   reportId: number,
   currentUserId: number,
 ): Promise<ReportDetail | undefined> {
-  const rows = await db
+  const reportQuery = db
     .selectDistinct({
       id: reports.id,
       locationId: reports.locationId,
@@ -163,13 +163,15 @@ export async function getReportById(
     .where(and(eq(reports.id, reportId), visibilityCondition(currentUserId)))
     .limit(1);
 
+  const [rows, usgsReadings] = await Promise.all([
+    reportQuery,
+    getUsgsReadingsForReport(reportId),
+  ]);
+
   const row = rows[0];
   if (!row) return undefined;
 
-  return {
-    ...row,
-    usgsReadings: await getUsgsReadingsForReport(row.id),
-  };
+  return { ...row, usgsReadings };
 }
 
 export function getReportByIdForOwnership(

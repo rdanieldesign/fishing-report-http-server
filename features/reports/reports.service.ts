@@ -76,9 +76,11 @@ export async function addReport(
   images: IUploadedImage[],
 ): Promise<number> {
   const imageIds = JSON.stringify(images.map((img) => img.key));
-  const reportId = await addReportRepo({ ...newReport, imageIds });
+  const [reportId, location] = await Promise.all([
+    addReportRepo({ ...newReport, imageIds }),
+    getLocation(newReport.locationId),
+  ]);
 
-  const location = await getLocation(newReport.locationId);
   if (location?.usgsLocationId) {
     usgsQueue.add("fetch-usgs", {
       postId: reportId,
