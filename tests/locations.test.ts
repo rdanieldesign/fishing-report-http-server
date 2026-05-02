@@ -10,15 +10,14 @@ beforeEach(() => {
 
 describe("GET /api/locations", () => {
   it("returns 200 and an array", async () => {
-    jest
-      .spyOn(locationsRepo, "getLocations")
-      .mockResolvedValueOnce([
-        {
-          id: 1,
-          name: "Avondale Lake",
-          googleMapsLink: "https://maps.example.com",
-        },
-      ]);
+    jest.spyOn(locationsRepo, "getLocations").mockResolvedValueOnce([
+      {
+        id: 1,
+        name: "Avondale Lake",
+        googleMapsLink: "https://maps.example.com",
+        usgsLocationId: null,
+      },
+    ]);
 
     const res = await request(app).get("/api/locations");
 
@@ -29,13 +28,12 @@ describe("GET /api/locations", () => {
 
 describe("GET /api/locations/:id", () => {
   it("returns 200 and an object with id when the location exists", async () => {
-    jest
-      .spyOn(locationsRepo, "getLocation")
-      .mockResolvedValueOnce({
-        id: 1,
-        name: "Avondale Lake",
-        googleMapsLink: "https://maps.example.com",
-      });
+    jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce({
+      id: 1,
+      name: "Avondale Lake",
+      googleMapsLink: "https://maps.example.com",
+      usgsLocationId: null,
+    });
 
     const res = await request(app).get("/api/locations/1");
 

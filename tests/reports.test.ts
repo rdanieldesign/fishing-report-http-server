@@ -1,9 +1,13 @@
 import request from "supertest";
 import { app } from "../app";
 import * as reportsRepo from "../features/reports/reports.repository";
+import * as locationsRepo from "../features/locations/locations.repository";
+import * as reportsService from "../features/reports/reports.service";
 import { signTestToken } from "./helpers";
 
 jest.mock("../features/reports/reports.repository");
+jest.mock("../features/locations/locations.repository");
+jest.mock("../queue/usgs.queue");
 jest.mock("../services/image-service", () => ({
   uploadMultipleImages: () => [
     (req: any, _res: any, next: any) => {
@@ -108,6 +112,12 @@ describe("GET /api/reports/:id", () => {
 describe("POST /api/reports", () => {
   it("returns 200", async () => {
     jest.spyOn(reportsRepo, "addReport").mockResolvedValueOnce(1);
+    jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce({
+      id: 1,
+      name: "Test Lake",
+      googleMapsLink: "https://maps.example.com",
+      usgsLocationId: null,
+    } as any);
 
     const res = await request(app)
       .post("/api/reports")
@@ -192,5 +202,78 @@ describe("DELETE /api/reports/:id", () => {
       .set("x-access-token", token);
 
     expect(res.status).toBe(403);
+  });
+});
+
+describe("addReport service with async USGS queue", () => {
+  it("queues a USGS fetch job when location has usgsLocationId", async () => {
+    const { usgsQueue } = require("../queue/usgs.queue");
+    jest.spyOn(reportsRepo, "addReport").mockResolvedValueOnce(42);
+    jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce({
+      id: 1,
+      name: "Test Lake",
+      googleMapsLink: "https://maps.example.com",
+      usgsLocationId: "usgs-12345",
+    });
+
+    await reportsService.addReport(
+      {
+        locationId: 1,
+        date: "2024-06-01",
+        catchCount: 5,
+        authorId: USER_ID,
+        notes: "Great catch",
+      },
+      [],
+    );
+
+    expect(usgsQueue.add).toHaveBeenCalledWith("fetch-usgs", {
+      postId: 42,
+      usgsLocationId: "usgs-12345",
+      reportDate: "2024-06-01",
+    });
+  });
+
+  it("does not queue a USGS fetch job when location lacks usgsLocationId", async () => {
+    const { usgsQueue } = require("../queue/usgs.queue");
+    jest.spyOn(reportsRepo, "addReport").mockResolvedValueOnce(43);
+    jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce({
+      id: 2,
+      name: "Unknown Lake",
+      googleMapsLink: "https://maps.example.com",
+      usgsLocationId: null,
+    });
+
+    await reportsService.addReport(
+      {
+        locationId: 2,
+        date: "2024-06-02",
+        catchCount: 3,
+        authorId: USER_ID,
+        notes: "Good day",
+      },
+      [],
+    );
+
+    expect(usgsQueue.add).not.toHaveBeenCalled();
+  });
+
+  it("does not queue a USGS fetch job when location is not found", async () => {
+    const { usgsQueue } = require("../queue/usgs.queue");
+    jest.spyOn(reportsRepo, "addReport").mockResolvedValueOnce(44);
+    jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce(undefined);
+
+    await reportsService.addReport(
+      {
+        locationId: 999,
+        date: "2024-06-03",
+        catchCount: 2,
+        authorId: USER_ID,
+        notes: "Quick stop",
+      },
+      [],
+    );
+
+    expect(usgsQueue.add).not.toHaveBeenCalled();
   });
 });

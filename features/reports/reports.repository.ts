@@ -1,8 +1,15 @@
 import { and, desc, eq, or } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
 import { db } from "../../db";
-import { friends, locations, reports, users } from "../../db/schema";
+import {
+  friends,
+  locations,
+  reports,
+  users,
+  usgsReadings,
+} from "../../db/schema";
 import { FriendStatus } from "../../enums/friend-enum";
+import type { UsgsReading } from "../usgs/usgs.service";
 
 export type Report = InferSelectModel<typeof reports>;
 
@@ -16,6 +23,7 @@ export type ReportDetail = {
   authorId: number;
   authorName: string;
   imageIds: string | null;
+  usgsReadings?: UsgsReading[];
 };
 
 export type NewReport = {
@@ -78,7 +86,25 @@ export function getReports(
     .orderBy(desc(reports.date));
 }
 
-export function getReportDetails(
+async function getUsgsReadingsForReport(
+  reportId: number,
+): Promise<UsgsReading[]> {
+  const rows = await db
+    .select({
+      id: usgsReadings.id,
+      parameterCode: usgsReadings.parameterCode,
+      computationIdentifier: usgsReadings.computationIdentifier,
+      parameterName: usgsReadings.parameterName,
+      value: usgsReadings.value,
+      unit: usgsReadings.unit,
+    })
+    .from(usgsReadings)
+    .where(eq(usgsReadings.postId, reportId));
+
+  return rows as UsgsReading[];
+}
+
+export async function getReportDetails(
   params: { authorId?: number; locationId?: number },
   currentUserId: number,
 ): Promise<ReportDetail[]> {
@@ -92,7 +118,7 @@ export function getReportDetails(
     visibilityCondition(currentUserId),
   ].filter(Boolean) as ReturnType<typeof eq>[];
 
-  return db
+  const rows = await db
     .selectDistinct({
       id: reports.id,
       locationId: reports.locationId,
@@ -110,13 +136,15 @@ export function getReportDetails(
     .leftJoin(friends, friendsJoin(currentUserId))
     .where(and(...conditions))
     .orderBy(desc(reports.date));
+
+  return rows;
 }
 
-export function getReportById(
+export async function getReportById(
   reportId: number,
   currentUserId: number,
 ): Promise<ReportDetail | undefined> {
-  return db
+  const reportQuery = db
     .selectDistinct({
       id: reports.id,
       locationId: reports.locationId,
@@ -133,8 +161,17 @@ export function getReportById(
     .innerJoin(users, eq(reports.authorId, users.id))
     .leftJoin(friends, friendsJoin(currentUserId))
     .where(and(eq(reports.id, reportId), visibilityCondition(currentUserId)))
-    .limit(1)
-    .then((rows) => rows[0]);
+    .limit(1);
+
+  const [rows, usgsReadings] = await Promise.all([
+    reportQuery,
+    getUsgsReadingsForReport(reportId),
+  ]);
+
+  const row = rows[0];
+  if (!row) return undefined;
+
+  return { ...row, usgsReadings };
 }
 
 export function getReportByIdForOwnership(

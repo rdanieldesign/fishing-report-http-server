@@ -20,6 +20,7 @@ export const allRelations = defineRelations(schema, (r) => ({
       from: r.reports.locationId,
       to: r.locations.id,
     }),
+    usgsReadings: r.many.usgsReadings(),
   },
   friends: {
     userOne: r.one.users({
@@ -31,6 +32,12 @@ export const allRelations = defineRelations(schema, (r) => ({
       from: r.friends.userTwoId,
       to: r.users.id,
       alias: "userTwo",
+    }),
+  },
+  usgsReadings: {
+    report: r.one.reports({
+      from: r.usgsReadings.postId,
+      to: r.reports.id,
     }),
   },
 }));
