@@ -1,4 +1,4 @@
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, exists, or, sql } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
 import { db } from "../../db";
 import {
@@ -86,7 +86,7 @@ export function getReports(
     .orderBy(desc(reports.date));
 }
 
-async function getUsgsReadingsForReport(
+export async function getUsgsReadingsForReport(
   reportId: number,
 ): Promise<UsgsReading[]> {
   const rows = await db
@@ -140,6 +140,7 @@ export async function getReportDetails(
   return rows;
 }
 
+// TODO: remove once migrated off REST
 export async function getReportById(
   reportId: number,
   currentUserId: number,
@@ -172,6 +173,51 @@ export async function getReportById(
   if (!row) return undefined;
 
   return { ...row, usgsReadings };
+}
+
+type FindFirstConfig = NonNullable<
+  Parameters<typeof db.query.reports.findFirst>[0]
+>;
+type PothosQueryFn = (opts: FindFirstConfig) => FindFirstConfig;
+
+export function getReportByIdGQL(
+  query: PothosQueryFn,
+  reportId: number,
+  currentUserId: number,
+) {
+  return db.query.reports.findFirst(
+    query({
+      where: {
+        id: reportId,
+        OR: [
+          { authorId: currentUserId },
+          {
+            RAW: (table) =>
+              exists(
+                db
+                  .select({ n: sql`1` })
+                  .from(friends)
+                  .where(
+                    and(
+                      eq(friends.status, FriendStatus.Confirmed),
+                      or(
+                        and(
+                          eq(friends.userOneId, currentUserId),
+                          eq(friends.userTwoId, table.authorId),
+                        ),
+                        and(
+                          eq(friends.userTwoId, currentUserId),
+                          eq(friends.userOneId, table.authorId),
+                        ),
+                      ),
+                    ),
+                  ),
+              ),
+          },
+        ],
+      },
+    }),
+  );
 }
 
 export function getReportByIdForOwnership(
