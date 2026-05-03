@@ -142,6 +142,27 @@ export async function updateReport(
   });
 }
 
+export async function enqueueUsgsForReport(
+  reportId: string,
+  usgsLocationId: string,
+  reportDate: string,
+  userId: number | undefined,
+): Promise<void> {
+  if (!userId) return sendUnauthorizedMessage();
+
+  const reportIdNum = parseInt(reportId);
+  const existing = await getReportByIdForOwnership(reportIdNum);
+  if (!existing || !reportBelongsToUser(existing, userId)) {
+    return sendUnauthorizedMessage();
+  }
+
+  usgsQueue.add("fetch-usgs", {
+    postId: reportIdNum,
+    usgsLocationId,
+    reportDate,
+  });
+}
+
 export async function deleteReport(
   reportId: string,
   userId: number | undefined,

@@ -6,6 +6,7 @@ import { handleResponse } from "../../shared/handle-response";
 import {
   addReport,
   deleteReport,
+  enqueueUsgsForReport,
   getReport,
   getReports,
   updateReport,
@@ -80,6 +81,22 @@ reportsRouter.put(
         req.body,
         req.authenticatedUserId,
         req.uploadedImages,
+      ),
+      res,
+    );
+  },
+);
+
+reportsRouter.post(
+  "/:reportId/usgs",
+  [authenticate],
+  (req: Request, res: Response) => {
+    handleResponse(
+      enqueueUsgsForReport(
+        req.params.reportId,
+        req.body.usgsLocationId,
+        req.body.reportDate,
+        req.authenticatedUserId,
       ),
       res,
     );

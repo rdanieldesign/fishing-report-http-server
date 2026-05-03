@@ -205,6 +205,64 @@ describe("DELETE /api/reports/:id", () => {
   });
 });
 
+describe("POST /api/reports/:id/usgs", () => {
+  const usgsBody = { usgsLocationId: "usgs-12345", reportDate: "2024-06-01" };
+
+  it("returns 401 with no token", async () => {
+    const res = await request(app).post("/api/reports/1/usgs").send(usgsBody);
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 200 and enqueues the job when user owns the report", async () => {
+    const { usgsQueue } = require("../queue/usgs.queue");
+    jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
+      id: 1,
+      authorId: USER_ID,
+      imageIds: null,
+    } as any);
+
+    const res = await request(app)
+      .post("/api/reports/1/usgs")
+      .set("x-access-token", token)
+      .send(usgsBody);
+
+    expect(res.status).toBe(200);
+    expect(usgsQueue.add).toHaveBeenCalledWith("fetch-usgs", {
+      postId: 1,
+      usgsLocationId: "usgs-12345",
+      reportDate: "2024-06-01",
+    });
+  });
+
+  it("returns 403 when user does not own the report", async () => {
+    jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
+      id: 1,
+      authorId: 999,
+      imageIds: null,
+    } as any);
+
+    const res = await request(app)
+      .post("/api/reports/1/usgs")
+      .set("x-access-token", token)
+      .send(usgsBody);
+
+    expect(res.status).toBe(403);
+  });
+
+  it("returns 403 when the report does not exist", async () => {
+    jest
+      .spyOn(reportsRepo, "getReportByIdForOwnership")
+      .mockResolvedValueOnce(undefined);
+
+    const res = await request(app)
+      .post("/api/reports/99/usgs")
+      .set("x-access-token", token)
+      .send(usgsBody);
+
+    expect(res.status).toBe(403);
+  });
+});
+
 describe("addReport service with async USGS queue", () => {
   it("queues a USGS fetch job when location has usgsLocationId", async () => {
     const { usgsQueue } = require("../queue/usgs.queue");
