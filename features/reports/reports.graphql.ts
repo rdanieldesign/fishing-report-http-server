@@ -3,6 +3,14 @@ import { getSignedImageUrl } from "../../services/image-service";
 import { getReportByIdGQL } from "./reports.repository";
 import { getReports } from "./reports.service";
 
+export const UserType = builder.drizzleObject("users", {
+  name: "User",
+  fields: (t) => ({
+    id: t.exposeInt("id"),
+    name: t.exposeString("name"),
+  }),
+});
+
 export const LocationType = builder.drizzleObject("locations", {
   name: "Location",
   fields: (t) => ({
@@ -55,7 +63,7 @@ export const ReportDetailType = builder.drizzleObject("reports", {
     date: t.exposeString("date"),
     catchCount: t.exposeInt("catchCount"),
     notes: t.exposeString("notes"),
-    authorId: t.exposeInt("authorId"),
+    author: t.relation("author"),
     location: t.relation("location"),
     usgsReadings: t.relation("usgsReadings"),
     images: t.field({
