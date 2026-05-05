@@ -1,13 +1,13 @@
 services:
   migrate:
-    image: ghcr.io/richarddaniel/fishing-report-http-server:latest
+    image: ghcr.io/rdanieldesign/fishing-report-http-server:latest
     env_file: .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: node dist/scripts/migrate.js
 
   app:
-    image: ghcr.io/richarddaniel/fishing-report-http-server:latest
+    image: ghcr.io/rdanieldesign/fishing-report-http-server:latest
     restart: unless-stopped
     env_file: .env
     extra_hosts:
@@ -20,7 +20,7 @@ services:
         condition: service_completed_successfully
 
   worker:
-    image: ghcr.io/richarddaniel/fishing-report-http-server:latest
+    image: ghcr.io/rdanieldesign/fishing-report-http-server:latest
     restart: unless-stopped
     env_file: .env
     extra_hosts:
