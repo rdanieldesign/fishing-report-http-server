@@ -6,4 +6,7 @@ module.exports = {
   setupFilesAfterEnv: ["./tests/setup-after-env.ts"],
   forceExit: true,
   detectOpenHandles: false,
+  moduleNameMapper: {
+    ".*queue/usgs\\.queue.*": "<rootDir>/__mocks__/queue/usgs.queue.ts",
+  },
 };
