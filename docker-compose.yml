@@ -1,0 +1,42 @@
+services:
+  migrate:
+    image: ghcr.io/richarddaniel/fishing-report-http-server:latest
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: node dist/scripts/migrate.js
+
+  app:
+    image: ghcr.io/richarddaniel/fishing-report-http-server:latest
+    restart: unless-stopped
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "3000:3000"
+    command: node dist/index.js
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    image: ghcr.io/richarddaniel/fishing-report-http-server:latest
+    restart: unless-stopped
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: node dist/workers/usgs.worker.js
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
