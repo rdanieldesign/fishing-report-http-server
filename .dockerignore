@@ -1,0 +1,12 @@
+node_modules
+dist
+.env*
+.git
+.gitignore
+**/*.test.ts
+**/*.spec.ts
+__mocks__
+.vscode
+.claude
+.eslintrc.json
+README.md

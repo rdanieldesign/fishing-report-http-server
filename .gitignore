@@ -2,6 +2,7 @@
 /dist
 secret.ts
 .env
+.env.docker
 /instructions
 log.txt
 .vscode
