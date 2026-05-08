@@ -1,16 +1,22 @@
-import type { ParsedQs } from "qs";
 import type { IError } from "../../shared/errors";
-import type { IUploadedImage } from "../../services/image-service";
+import type {
+  ImageMetadata,
+  ISignedImageURL,
+  IUploadedImage,
+} from "../../services/image-service";
 import {
   deleteMultipleImages,
   getSignedImageUrl,
+  getSignedPutURLs,
 } from "../../services/image-service";
 import {
   addReport as addReportRepo,
+  appendImageToReport,
   deleteReport as deleteReportRepo,
   getReportById,
   getReportByIdForOwnership,
   getReportDetails,
+  NewReport,
   updateReport as updateReportRepo,
   type Report,
   type ReportDetail,
@@ -72,13 +78,17 @@ export async function getReport(
 }
 
 export async function addReport(
-  newReport: Omit<Report, "id" | "imageIds"> & { notes: string },
-  images: IUploadedImage[],
-): Promise<number> {
-  const imageIds = JSON.stringify(images.map((img) => img.key));
+  newReport: NewReport & {
+    imageMetadata?: ImageMetadata[];
+  },
+): Promise<{
+  reportId: number;
+  signedImageUrls: ISignedImageURL[] | null;
+}> {
+  const { imageMetadata, ...reportData } = newReport;
   const [reportId, location] = await Promise.all([
-    addReportRepo({ ...newReport, imageIds }),
-    getLocation(newReport.locationId),
+    addReportRepo(reportData),
+    getLocation(reportData.locationId),
   ]);
 
   if (location?.usgsLocationId) {
@@ -89,7 +99,12 @@ export async function addReport(
     });
   }
 
-  return reportId;
+  let putUrls: ISignedImageURL[] | null = null;
+  if (newReport.imageMetadata?.length) {
+    putUrls = await getSignedPutURLs(reportId, newReport.imageMetadata);
+  }
+
+  return { reportId, signedImageUrls: putUrls };
 }
 
 export async function updateReport(
@@ -161,6 +176,13 @@ export async function enqueueUsgsForReport(
     usgsLocationId,
     reportDate,
   });
+}
+
+export function appendReportImage(
+  reportId: number,
+  imageKey: string,
+): Promise<void> {
+  return appendImageToReport(reportId, imageKey);
 }
 
 export async function deleteReport(

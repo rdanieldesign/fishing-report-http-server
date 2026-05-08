@@ -32,7 +32,15 @@ export type NewReport = {
   date: string;
   notes: string;
   authorId: number;
-  imageIds: string | null;
+};
+
+export type UpdateReport = {
+  locationId: number;
+  catchCount: number;
+  date: string;
+  notes: string;
+  authorId: number;
+  imageIds?: string;
 };
 
 // The visibility filter: current user can see their own reports and confirmed friends' reports.
@@ -240,7 +248,7 @@ export function addReport(newReport: NewReport): Promise<number> {
 
 export function updateReport(
   reportId: number,
-  update: Partial<NewReport>,
+  update: UpdateReport,
 ): Promise<void> {
   return db
     .update(reports)
@@ -254,4 +262,21 @@ export function deleteReport(reportId: number): Promise<void> {
     .delete(reports)
     .where(eq(reports.id, reportId))
     .then(() => undefined);
+}
+
+export async function appendImageToReport(
+  reportId: number,
+  imageKey: string,
+): Promise<void> {
+  const existing = await getReportByIdForOwnership(reportId);
+  if (!existing) throw new Error(`Report ${reportId} not found`);
+
+  const existingIds: string[] = existing.imageIds
+    ? JSON.parse(existing.imageIds)
+    : [];
+
+  await db
+    .update(reports)
+    .set({ imageIds: JSON.stringify([...existingIds, imageKey]) })
+    .where(eq(reports.id, reportId));
 }

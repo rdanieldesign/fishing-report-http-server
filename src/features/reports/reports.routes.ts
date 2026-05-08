@@ -1,10 +1,10 @@
 import { Router } from "express";
 import type { Request, Response } from "express-serve-static-core";
-import { authenticate } from "../../middleware/auth";
-import { uploadMultipleImages } from "../../services/image-service";
+import { authenticate, authenticateService } from "../../middleware/auth";
 import { handleResponse } from "../../shared/handle-response";
 import {
   addReport,
+  appendReportImage,
   deleteReport,
   enqueueUsgsForReport,
   getReport,
@@ -57,23 +57,16 @@ reportsRouter.get(
   },
 );
 
-reportsRouter.post(
-  "/",
-  [authenticate, ...uploadMultipleImages("images")],
-  (req: Request, res: Response) => {
-    handleResponse(
-      addReport(
-        { ...req.body, authorId: req.authenticatedUserId },
-        req.uploadedImages,
-      ),
-      res,
-    );
-  },
-);
+reportsRouter.post("/", [authenticate], (req: Request, res: Response) => {
+  handleResponse(
+    addReport({ ...req.body, authorId: req.authenticatedUserId }),
+    res,
+  );
+});
 
 reportsRouter.put(
   "/:reportId",
-  [authenticate, ...uploadMultipleImages("images")],
+  [authenticate],
   (req: Request, res: Response) => {
     handleResponse(
       updateReport(
@@ -109,6 +102,17 @@ reportsRouter.delete(
   (req: Request, res: Response) => {
     handleResponse(
       deleteReport(req.params.reportId, req.authenticatedUserId),
+      res,
+    );
+  },
+);
+
+reportsRouter.post(
+  "/:reportId/images",
+  [authenticateService],
+  (req: Request, res: Response) => {
+    handleResponse(
+      appendReportImage(parseInt(req.params.reportId), req.body.imageKey),
       res,
     );
   },

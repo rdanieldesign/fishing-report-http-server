@@ -3,5 +3,7 @@ process.env.MYSQL_HOST = "localhost";
 process.env.MYSQL_USERNAME = "test";
 process.env.MYSQL_PASSWORD = "test";
 process.env.AWS_BUCKET = "test-bucket";
+process.env.AWS_ORIGINAL_BUCKET = "test-bucket-original";
 process.env.REDIS_HOST = "localhost";
 process.env.REDIS_PORT = "6379";
+process.env.SERVICE_SECRET = "service-secret";

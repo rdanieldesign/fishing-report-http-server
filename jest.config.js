@@ -1,12 +1,12 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
-  testMatch: ["**/tests/**/*.test.ts"],
-  setupFiles: ["./tests/setup.ts"],
-  setupFilesAfterEnv: ["./tests/setup-after-env.ts"],
+  testMatch: ["**/src/tests/**/*.test.ts"],
+  setupFiles: ["./src/tests/setup.ts"],
+  setupFilesAfterEnv: ["./src/tests/setup-after-env.ts"],
   forceExit: true,
   detectOpenHandles: false,
   moduleNameMapper: {
-    ".*queue/usgs\\.queue.*": "<rootDir>/__mocks__/queue/usgs.queue.ts",
+    ".*queue/usgs\\.queue.*": "<rootDir>/src/__mocks__/queue/usgs.queue.ts",
   },
 };
