@@ -8,10 +8,7 @@ resource "aws_s3_bucket_cors_configuration" "originals" {
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["PUT"]
-    allowed_origins = [
-      "https://fishing-report.site",
-      "https://www.fishing-report.site",
-    ]
+    allowed_origins = var.cors_allowed_origins
     expose_headers = []
   }
 }

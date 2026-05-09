@@ -28,3 +28,8 @@ variable "service_secret" {
   type      = string
   sensitive = true
 }
+
+variable "cors_allowed_origins" {
+  type    = list(string)
+  default = ["https://fishing-report.site", "https://www.fishing-report.site"]
+}
