@@ -4,13 +4,13 @@ import { authenticate, authenticateService } from "../../middleware/auth";
 import { handleResponse } from "../../shared/handle-response";
 import {
   addReport,
-  appendReportImage,
   deleteReport,
   enqueueUsgsForReport,
   getReport,
   getReports,
   updateReport,
 } from "./reports.service";
+import { updateReportImage } from "./reports.repository";
 import { ParsedQs } from "qs";
 
 export const reportsRouter = Router();
@@ -69,12 +69,7 @@ reportsRouter.put(
   [authenticate],
   (req: Request, res: Response) => {
     handleResponse(
-      updateReport(
-        req.params.reportId,
-        req.body,
-        req.authenticatedUserId,
-        req.uploadedImages,
-      ),
+      updateReport(req.params.reportId, req.body, req.authenticatedUserId),
       res,
     );
   },
@@ -107,12 +102,12 @@ reportsRouter.delete(
   },
 );
 
-reportsRouter.post(
-  "/:reportId/images",
+reportsRouter.patch(
+  "/images/:id",
   [authenticateService],
   (req: Request, res: Response) => {
     handleResponse(
-      appendReportImage(parseInt(req.params.reportId), req.body.imageKey),
+      updateReportImage(parseInt(req.params.id), req.body.imageKey),
       res,
     );
   },

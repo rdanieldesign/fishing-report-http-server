@@ -1,6 +1,6 @@
 import { builder } from "../../graphql/builder";
 import { getSignedImageUrl } from "../../services/image-service";
-import { getReportByIdGQL } from "./reports.repository";
+import { getImagesByReportId, getReportByIdGQL } from "./reports.repository";
 import { getReports } from "./reports.service";
 
 export const UserType = builder.drizzleObject("users", {
@@ -52,7 +52,6 @@ export const ReportType = builder.drizzleObject("reports", {
     catchCount: t.exposeInt("catchCount"),
     notes: t.exposeString("notes"),
     authorId: t.exposeInt("authorId"),
-    imageIds: t.expose("imageIds", { type: "JSON", nullable: true }),
   }),
 });
 
@@ -69,18 +68,14 @@ export const ReportDetailType = builder.drizzleObject("reports", {
     images: t.field({
       type: [ReportImageType],
       nullable: true,
-      select: {
-        columns: { imageIds: true },
-      },
+      select: { columns: { id: true } },
       resolve: async (report) => {
-        if (!report.imageIds) return null;
-        const ids: string[] = Array.isArray(report.imageIds)
-          ? report.imageIds
-          : JSON.parse(report.imageIds);
+        const images = await getImagesByReportId(report.id);
+        if (!images.length) return null;
         return Promise.all(
-          ids.map(async (imageId) => ({
-            imageId,
-            imageURL: await getSignedImageUrl(imageId),
+          images.map(async ({ imageKey }) => ({
+            imageId: imageKey,
+            imageURL: await getSignedImageUrl(imageKey),
           })),
         );
       },

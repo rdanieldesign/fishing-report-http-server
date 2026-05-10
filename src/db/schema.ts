@@ -1,7 +1,9 @@
 import {
   int,
+  mysqlEnum,
   mysqlTable,
   text,
+  timestamp,
   varchar,
   date,
   decimal,
@@ -28,7 +30,18 @@ export const reports = mysqlTable("reports", {
   catchCount: int("catchCount").notNull(),
   notes: text("notes").notNull(),
   authorId: int("authorId").notNull(),
-  imageIds: text("imageIds"),
+});
+
+export const reportImages = mysqlTable("report_images", {
+  id: int("id").primaryKey().autoincrement(),
+  reportId: int("reportId", { unsigned: true })
+    .notNull()
+    .references(() => reports.id, { onDelete: "cascade" }),
+  imageKey: varchar("imageKey", { length: 500 }),
+  status: mysqlEnum(["uploading", "complete", "failed"])
+    .notNull()
+    .default("uploading"),
+  createdAt: timestamp("createdAt").defaultNow(),
 });
 
 export const friends = mysqlTable("friends", {
@@ -52,4 +65,11 @@ export const usgsReadings = mysqlTable("usgs_readings", {
   unit: varchar("unit", { length: 20 }).notNull(),
 });
 
-export const schema = { users, locations, reports, friends, usgsReadings };
+export const schema = {
+  users,
+  locations,
+  reports,
+  reportImages,
+  friends,
+  usgsReadings,
+};

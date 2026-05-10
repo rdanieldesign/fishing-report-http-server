@@ -2,7 +2,6 @@ import type { IError } from "../../shared/errors";
 import type {
   ImageMetadata,
   ISignedImageURL,
-  IUploadedImage,
 } from "../../services/image-service";
 import {
   deleteMultipleImages,
@@ -11,8 +10,10 @@ import {
 } from "../../services/image-service";
 import {
   addReport as addReportRepo,
-  appendImageToReport,
+  createPendingReportImages,
   deleteReport as deleteReportRepo,
+  deleteReportImagesByKeys,
+  getImagesByReportId,
   getReportById,
   getReportByIdForOwnership,
   getReportDetails,
@@ -24,7 +25,7 @@ import {
 import { usgsQueue } from "../../queue/usgs.queue";
 import { getLocation } from "../locations/locations.repository";
 
-export type ReportWithImages = Omit<ReportDetail, "imageIds"> & {
+export type ReportWithImages = ReportDetail & {
   images?: { imageId: string; imageURL: string }[];
 };
 
@@ -54,27 +55,35 @@ export async function getReport(
 ): Promise<ReportWithImages | null> {
   if (!currentUserId) return sendUnauthorizedMessage();
 
-  const row = await getReportById(parseInt(reportId), currentUserId);
+  const reportIdNum = parseInt(reportId);
+  const [row, images] = await Promise.all([
+    getReportById(reportIdNum, currentUserId),
+    getImagesByReportId(reportIdNum),
+  ]);
+
   if (!row) return null;
+  if (!images.length) return row;
 
-  if (!row.imageIds) {
-    const { imageIds, ...report } = row;
-    return report;
-  }
-
-  const { imageIds, ...report } = row;
-  const parsedIds: string[] = Array.isArray(imageIds)
-    ? imageIds
-    : JSON.parse(imageIds);
   return {
-    ...report,
+    ...row,
     images: await Promise.all(
-      parsedIds.map(async (imageId) => ({
-        imageId,
-        imageURL: await getSignedImageUrl(imageId),
+      images.map(async ({ imageKey }) => ({
+        imageId: imageKey,
+        imageURL: await getSignedImageUrl(imageKey),
       })),
     ),
   };
+}
+
+async function createPendingImageUploads(
+  reportId: number,
+  metadata: ImageMetadata[],
+): Promise<ISignedImageURL[]> {
+  const reportImageIds = await createPendingReportImages(
+    reportId,
+    metadata.length,
+  );
+  return getSignedPutURLs(metadata, reportImageIds);
 }
 
 export async function addReport(
@@ -99,26 +108,25 @@ export async function addReport(
     });
   }
 
-  let putUrls: ISignedImageURL[] | null = null;
-  if (newReport.imageMetadata?.length) {
-    putUrls = await getSignedPutURLs(reportId, newReport.imageMetadata);
-  }
+  const signedImageUrls = imageMetadata?.length
+    ? await createPendingImageUploads(reportId, imageMetadata)
+    : null;
 
-  return { reportId, signedImageUrls: putUrls };
+  return { reportId, signedImageUrls };
 }
 
 export async function updateReport(
   reportId: string,
   body: {
     locationId: number;
-    date: string;
     catchCount: number;
+    date: string;
     notes: string;
-    imageIds?: string | string[];
+    newImageMetadata?: ImageMetadata[];
+    imageIdsToKeep?: string[];
   },
   userId: number | undefined,
-  images: IUploadedImage[],
-): Promise<void> {
+): Promise<{ signedImageUrls: ISignedImageURL[] | null }> {
   if (!userId) return sendUnauthorizedMessage();
 
   const reportIdNum = parseInt(reportId);
@@ -127,34 +135,40 @@ export async function updateReport(
     return sendUnauthorizedMessage();
   }
 
-  const incomingIds: string[] = Array.isArray(body.imageIds)
-    ? body.imageIds
-    : body.imageIds
-      ? JSON.parse(body.imageIds)
-      : [];
+  const imageIdsToKeep = body.imageIdsToKeep ?? [];
+  const currentImages = await getImagesByReportId(reportIdNum);
+  const removedKeys = currentImages
+    .map((img) => img.imageKey)
+    .filter((key) => !imageIdsToKeep.includes(key));
 
-  const resolvedIds = incomingIds.map((imageId) => {
-    const match = images.find((img) => img.originalname === imageId);
-    return match?.key ?? imageId;
-  });
+  const newUploads = body.newImageMetadata?.length
+    ? createPendingImageUploads(reportIdNum, body.newImageMetadata)
+    : Promise.resolve(null);
 
-  const existingIds: string[] = existing.imageIds
-    ? Array.isArray(existing.imageIds)
-      ? existing.imageIds
-      : JSON.parse(existing.imageIds)
-    : [];
+  const deleteFromS3 = removedKeys.length
+    ? deleteMultipleImages(removedKeys)
+    : Promise.resolve();
 
-  const removedIds = existingIds.filter((id) => !resolvedIds.includes(id));
-  if (removedIds.length) await deleteMultipleImages(removedIds);
+  const deleteFromDb = removedKeys.length
+    ? deleteReportImagesByKeys(reportIdNum, removedKeys)
+    : Promise.resolve();
 
-  await updateReportRepo(reportIdNum, {
+  const updateReport = updateReportRepo(reportIdNum, {
     locationId: body.locationId,
     date: body.date,
     catchCount: body.catchCount,
     notes: body.notes,
     authorId: userId,
-    imageIds: JSON.stringify(resolvedIds),
   });
+
+  const [signedImageUrls] = await Promise.all([
+    newUploads,
+    deleteFromS3,
+    deleteFromDb,
+    updateReport,
+  ]);
+
+  return { signedImageUrls };
 }
 
 export async function enqueueUsgsForReport(
@@ -178,13 +192,6 @@ export async function enqueueUsgsForReport(
   });
 }
 
-export function appendReportImage(
-  reportId: number,
-  imageKey: string,
-): Promise<void> {
-  return appendImageToReport(reportId, imageKey);
-}
-
 export async function deleteReport(
   reportId: string,
   userId: number | undefined,
@@ -197,12 +204,9 @@ export async function deleteReport(
     return sendUnauthorizedMessage();
   }
 
-  const imageIds: string[] = existing.imageIds
-    ? Array.isArray(existing.imageIds)
-      ? existing.imageIds
-      : JSON.parse(existing.imageIds)
-    : [];
+  const images = await getImagesByReportId(reportIdNum);
+  const imageKeys = images.map((img) => img.imageKey);
 
   await deleteReportRepo(reportIdNum);
-  if (imageIds.length) await deleteMultipleImages(imageIds);
+  if (imageKeys.length) await deleteMultipleImages(imageKeys);
 }

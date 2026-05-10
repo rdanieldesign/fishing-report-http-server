@@ -45,17 +45,17 @@ export async function deleteMultipleImages(imageIds: string[]): Promise<void> {
 }
 
 export async function getSignedPutURLs(
-  reportId: number,
   imageMetadata: ImageMetadata[],
+  reportImageIds: number[],
 ): Promise<ISignedImageURL[]> {
-  const urls = await Promise.all(
-    imageMetadata.map(async ({ filename, mimetype }) => {
+  return Promise.all(
+    imageMetadata.map(async ({ filename, mimetype }, i) => {
       const key = uuidv4();
       const command = new PutObjectCommand({
         Bucket: AWS_ORIGINAL_BUCKET,
         Key: key,
         ContentType: mimetype,
-        Metadata: { reportid: reportId.toString() },
+        Metadata: { reportimageid: reportImageIds[i].toString() },
       });
       const uploadUrl = await getSignedUrl(s3, command, {
         expiresIn: 5 * 60,
@@ -63,5 +63,4 @@ export async function getSignedPutURLs(
       return { uploadUrl, key, filename };
     }),
   );
-  return urls;
 }

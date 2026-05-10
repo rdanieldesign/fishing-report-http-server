@@ -34,9 +34,11 @@ async function processRecord(
     new GetObjectCommand({ Bucket: sourceBucket, Key: sourceKey }),
   );
 
-  const reportId = getResult.Metadata?.reportid;
-  if (!reportId) {
-    console.error(`No reportid metadata on object ${sourceKey} — skipping`);
+  const reportImageId = getResult.Metadata?.reportimageid;
+  if (!reportImageId) {
+    console.error(
+      `No reportimageid metadata on object ${sourceKey} — skipping`,
+    );
     return;
   }
 
@@ -57,22 +59,25 @@ async function processRecord(
     }),
   );
 
-  const response = await fetch(`${API_URL}/api/reports/${reportId}/images`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-service-secret": SERVICE_SECRET,
+  const response = await fetch(
+    `${API_URL}/api/reports/images/${reportImageId}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-service-secret": SERVICE_SECRET,
+      },
+      body: JSON.stringify({ imageKey: sourceKey }),
     },
-    body: JSON.stringify({ imageKey: sourceKey }),
-  });
+  );
 
   if (!response.ok) {
     throw new Error(
-      `Failed to update report ${reportId}: ${response.status} ${await response.text()}`,
+      `Failed to update report image ${reportImageId}: ${response.status} ${await response.text()}`,
     );
   }
 
-  console.log(`Processed image for report ${reportId}: ${sourceKey}`);
+  console.log(`Processed image ${reportImageId}: ${sourceKey}`);
 }
 
 export const handler = async (event: S3Event): Promise<void> => {
