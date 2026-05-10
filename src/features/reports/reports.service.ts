@@ -13,6 +13,7 @@ import {
   createPendingReportImages,
   deleteReport as deleteReportRepo,
   deleteReportImagesByKeys,
+  getAllImageKeysByReportId,
   getImagesByReportId,
   getReportById,
   getReportByIdForOwnership,
@@ -204,9 +205,10 @@ export async function deleteReport(
     return sendUnauthorizedMessage();
   }
 
-  const images = await getImagesByReportId(reportIdNum);
-  const imageKeys = images.map((img) => img.imageKey);
+  const imageKeys = await getAllImageKeysByReportId(reportIdNum);
 
-  await deleteReportRepo(reportIdNum);
-  if (imageKeys.length) await deleteMultipleImages(imageKeys);
+  await Promise.all([
+    deleteReportRepo(reportIdNum),
+    imageKeys.length ? deleteMultipleImages(imageKeys) : Promise.resolve(),
+  ]);
 }

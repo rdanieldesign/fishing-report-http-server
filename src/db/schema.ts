@@ -34,7 +34,7 @@ export const reports = mysqlTable("reports", {
 
 export const reportImages = mysqlTable("report_images", {
   id: int("id").primaryKey().autoincrement(),
-  reportId: int("reportId", { unsigned: true })
+  reportId: int("reportId")
     .notNull()
     .references(() => reports.id, { onDelete: "cascade" }),
   imageKey: varchar("imageKey", { length: 500 }),

@@ -284,6 +284,16 @@ export function getImagesByReportId(reportId: number): Promise<ReportImage[]> {
     ) as Promise<ReportImage[]>;
 }
 
+export async function getAllImageKeysByReportId(
+  reportId: number,
+): Promise<string[]> {
+  const rows = await db
+    .select({ imageKey: reportImages.imageKey })
+    .from(reportImages)
+    .where(eq(reportImages.reportId, reportId));
+  return rows.map((r) => r.imageKey).filter((k): k is string => k != null);
+}
+
 export async function createPendingReportImages(
   reportId: number,
   count: number,
