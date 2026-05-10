@@ -80,8 +80,8 @@ describe("GET /api/reports/:id", () => {
     jest.spyOn(reportsRepo, "getReportById").mockResolvedValueOnce({
       id: 1,
       authorId: USER_ID,
-      imageIds: null,
     } as any);
+    jest.spyOn(reportsRepo, "getImagesByReportId").mockResolvedValueOnce([]);
 
     const res = await request(app)
       .get("/api/reports/1")
@@ -93,6 +93,7 @@ describe("GET /api/reports/:id", () => {
 
   it("returns 200 and null when the user cannot see the report", async () => {
     jest.spyOn(reportsRepo, "getReportById").mockResolvedValueOnce(undefined);
+    jest.spyOn(reportsRepo, "getImagesByReportId").mockResolvedValueOnce([]);
 
     const res = await request(app)
       .get("/api/reports/99")
@@ -140,8 +141,8 @@ describe("PUT /api/reports/:id", () => {
     jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
       id: 1,
       authorId: USER_ID,
-      imageIds: null,
     } as any);
+    jest.spyOn(reportsRepo, "getImagesByReportId").mockResolvedValueOnce([]);
     jest.spyOn(reportsRepo, "updateReport").mockResolvedValueOnce(undefined);
 
     const res = await request(app)
@@ -156,7 +157,6 @@ describe("PUT /api/reports/:id", () => {
     jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
       id: 1,
       authorId: 999,
-      imageIds: null,
     } as any);
 
     const res = await request(app)
@@ -173,8 +173,10 @@ describe("DELETE /api/reports/:id", () => {
     jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
       id: 1,
       authorId: USER_ID,
-      imageIds: null,
     } as any);
+    jest
+      .spyOn(reportsRepo, "getAllImageKeysByReportId")
+      .mockResolvedValueOnce([]);
     jest.spyOn(reportsRepo, "deleteReport").mockResolvedValueOnce(undefined);
 
     const res = await request(app)
@@ -188,7 +190,6 @@ describe("DELETE /api/reports/:id", () => {
     jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
       id: 1,
       authorId: 999,
-      imageIds: null,
     } as any);
 
     const res = await request(app)
@@ -212,7 +213,6 @@ describe("POST /api/reports/:id/usgs", () => {
     jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
       id: 1,
       authorId: USER_ID,
-      imageIds: null,
     } as any);
 
     const res = await request(app)
@@ -232,7 +232,6 @@ describe("POST /api/reports/:id/usgs", () => {
     jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
       id: 1,
       authorId: 999,
-      imageIds: null,
     } as any);
 
     const res = await request(app)
