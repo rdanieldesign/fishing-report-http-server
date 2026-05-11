@@ -31,10 +31,6 @@ export async function getSignedImageUrl(imageKey: string): Promise<string> {
   return getSignedUrl(s3, command, { expiresIn: 5 * 60 });
 }
 
-export async function deleteSingleImage(imageId: string): Promise<void> {
-  await s3.send(new DeleteObjectCommand({ Bucket: AWS_BUCKET, Key: imageId }));
-}
-
 export async function deleteMultipleImages(imageIds: string[]): Promise<void> {
   await s3.send(
     new DeleteObjectsCommand({

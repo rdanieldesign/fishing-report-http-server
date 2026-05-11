@@ -11,7 +11,6 @@ jest.mock("../queue/usgs.queue");
 jest.mock("../services/image-service", () => ({
   getSignedImageUrl: async () => "https://mock-s3.example.com/image",
   deleteMultipleImages: jest.fn(),
-  deleteSingleImage: jest.fn(),
 }));
 
 const USER_ID = 1;

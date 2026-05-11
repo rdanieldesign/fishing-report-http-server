@@ -1,4 +1,13 @@
-import { and, desc, eq, exists, inArray, or, sql } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  exists,
+  inArray,
+  isNotNull,
+  or,
+  sql,
+} from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
 import { db } from "../../db";
 import {
@@ -290,8 +299,13 @@ export async function getAllImageKeysByReportId(
   const rows = await db
     .select({ imageKey: reportImages.imageKey })
     .from(reportImages)
-    .where(eq(reportImages.reportId, reportId));
-  return rows.map((r) => r.imageKey).filter((k): k is string => k != null);
+    .where(
+      and(
+        eq(reportImages.reportId, reportId),
+        isNotNull(reportImages.imageKey),
+      ),
+    );
+  return rows.map((r) => r.imageKey as string);
 }
 
 export async function createPendingReportImages(
@@ -313,16 +327,6 @@ export function updateReportImage(id: number, imageKey: string): Promise<void> {
     .update(reportImages)
     .set({ imageKey, status: "complete" })
     .where(eq(reportImages.id, id))
-    .then(() => undefined);
-}
-
-export function insertCompleteReportImage(
-  reportId: number,
-  imageKey: string,
-): Promise<void> {
-  return db
-    .insert(reportImages)
-    .values({ reportId, imageKey, status: "complete" })
     .then(() => undefined);
 }
 

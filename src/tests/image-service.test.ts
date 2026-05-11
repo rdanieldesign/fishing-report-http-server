@@ -1,6 +1,5 @@
 import {
   getSignedImageUrl,
-  deleteSingleImage,
   deleteMultipleImages,
 } from "../services/image-service";
 import { S3Client } from "@aws-sdk/client-s3";
@@ -27,17 +26,6 @@ describe("Image Service", () => {
 
       expect(mockGetSignedUrl).toHaveBeenCalled();
       expect(url).toBe("https://signed-url.example.com");
-    });
-  });
-
-  describe("deleteSingleImage", () => {
-    it("sends a DeleteObjectCommand for the correct key", async () => {
-      const mockSend = jest.fn().mockResolvedValueOnce({});
-      mockS3Client.prototype.send = mockSend;
-
-      await deleteSingleImage("test-key");
-
-      expect(mockSend).toHaveBeenCalledWith(expect.any(Object));
     });
   });
 

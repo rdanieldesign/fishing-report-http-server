@@ -18,7 +18,7 @@ import {
   getReportById,
   getReportByIdForOwnership,
   getReportDetails,
-  NewReport,
+  type NewReport,
   updateReport as updateReportRepo,
   type Report,
   type ReportDetail,
