@@ -7,3 +7,11 @@ secret.ts
 log.txt
 .vscode
 .claude
+
+# Terraform
+terraform/.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/terraform.tfvars
+terraform/terraform.dev.tfvars
+terraform/terraform.tfstate.d/

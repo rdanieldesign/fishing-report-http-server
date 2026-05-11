@@ -1,0 +1,29 @@
+{
+  "name": "process-image-lambda",
+  "version": "1.0.0",
+  "main": "dist/handler.js",
+  "scripts": {
+    "ecr:login": "aws ecr get-login-password --region ${AWS_REGION:-us-east-1} | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.${AWS_REGION:-us-east-1}.amazonaws.com",
+    "build:dev": "docker buildx build --platform linux/amd64 --provenance=false --load -t process-image-dev .",
+    "build:prod": "docker buildx build --platform linux/amd64 --provenance=false --load -t process-image-prod .",
+    "tag:dev": "docker tag process-image-dev:latest $AWS_ACCOUNT_ID.dkr.ecr.${AWS_REGION:-us-east-1}.amazonaws.com/process-image-dev:latest",
+    "tag:prod": "docker tag process-image-prod:latest $AWS_ACCOUNT_ID.dkr.ecr.${AWS_REGION:-us-east-1}.amazonaws.com/process-image-prod:latest",
+    "push:dev": "docker push $AWS_ACCOUNT_ID.dkr.ecr.${AWS_REGION:-us-east-1}.amazonaws.com/process-image-dev:latest",
+    "push:prod": "docker push $AWS_ACCOUNT_ID.dkr.ecr.${AWS_REGION:-us-east-1}.amazonaws.com/process-image-prod:latest",
+    "deploy:dev": "npm run build:dev && npm run ecr:login && npm run tag:dev && npm run push:dev && npm run lambda:update:dev",
+    "deploy:prod": "npm run build:prod && npm run ecr:login && npm run tag:prod && npm run push:prod && npm run lambda:update:prod",
+    "lambda:update:dev": "aws lambda update-function-code --function-name processImageDev --image-uri $AWS_ACCOUNT_ID.dkr.ecr.${AWS_REGION:-us-east-1}.amazonaws.com/process-image-dev:latest",
+    "lambda:update:prod": "aws lambda update-function-code --function-name processImageProd --image-uri $AWS_ACCOUNT_ID.dkr.ecr.${AWS_REGION:-us-east-1}.amazonaws.com/process-image-prod:latest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1037.0",
+    "sharp": "^0.34.5",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.149",
+    "@types/node": "^22.0.0",
+    "@types/uuid": "^8.3.4",
+    "typescript": "^5.9.3"
+  }
+}

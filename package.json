@@ -4,14 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently 'tsc -w' 'nodemon dist/index.js' 'nodemon dist/workers/usgs.worker.js'",
-    "dev:main": "concurrently 'tsc -w' 'nodemon dist/index.js'",
-    "dev:worker": "concurrently 'tsc -w' 'nodemon dist/workers/usgs.worker.js'",
+    "dev": "concurrently 'tsc -w' 'npm run dev:main' 'npm run dev:worker' 'npm run tunnel'",
+    "dev:containers": "docker compose -f docker-compose.dev.yml up",
+    "dev:main": "nodemon dist/index.js",
+    "dev:worker": "nodemon dist/workers/usgs.worker.js",
     "build": "tsc",
     "migrate": "node dist/scripts/migrate.js",
     "start": "tsc && node dist/index.js",
     "start:worker": "node dist/workers/usgs.worker.js",
-    "test": "jest"
+    "test": "jest",
+    "tunnel": "ngrok http --domain=$NGROK_DOMAIN 3000"
   },
   "author": "",
   "license": "ISC",

@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express-serve-static-core";
 import { verifyToken } from "../features/auth/auth.service";
 import type { IVerifiedTokenResponse } from "../features/auth/auth.types";
+import { SERVICE_SECRET } from "../config";
 
 export async function authenticate(
   req: Request,
@@ -20,4 +21,16 @@ export async function authenticate(
   } else {
     res.status(tokenResponse.status || 401).json(tokenResponse.message);
   }
+}
+
+export function authenticateService(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  if (req.headers["x-service-secret"] !== SERVICE_SECRET) {
+    res.status(401).json("Unauthorized");
+    return;
+  }
+  next();
 }

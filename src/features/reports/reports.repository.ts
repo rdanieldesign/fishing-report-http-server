@@ -1,9 +1,19 @@
-import { and, desc, eq, exists, or, sql } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  exists,
+  inArray,
+  isNotNull,
+  or,
+  sql,
+} from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
 import { db } from "../../db";
 import {
   friends,
   locations,
+  reportImages,
   reports,
   users,
   usgsReadings,
@@ -22,8 +32,14 @@ export type ReportDetail = {
   notes: string;
   authorId: number;
   authorName: string;
-  imageIds: string | null;
   usgsReadings?: UsgsReading[];
+};
+
+export type ReportImage = {
+  id: number;
+  reportId: number;
+  imageKey: string;
+  status: "uploading" | "complete" | "failed";
 };
 
 export type NewReport = {
@@ -32,7 +48,14 @@ export type NewReport = {
   date: string;
   notes: string;
   authorId: number;
-  imageIds: string | null;
+};
+
+export type UpdateReport = {
+  locationId: number;
+  catchCount: number;
+  date: string;
+  notes: string;
+  authorId: number;
 };
 
 // The visibility filter: current user can see their own reports and confirmed friends' reports.
@@ -78,7 +101,6 @@ export function getReports(
       catchCount: reports.catchCount,
       notes: reports.notes,
       authorId: reports.authorId,
-      imageIds: reports.imageIds,
     })
     .from(reports)
     .leftJoin(friends, friendsJoin(currentUserId))
@@ -128,7 +150,6 @@ export async function getReportDetails(
       notes: reports.notes,
       authorId: reports.authorId,
       authorName: users.name,
-      imageIds: reports.imageIds,
     })
     .from(reports)
     .innerJoin(locations, eq(reports.locationId, locations.id))
@@ -155,7 +176,6 @@ export async function getReportById(
       notes: reports.notes,
       authorId: reports.authorId,
       authorName: users.name,
-      imageIds: reports.imageIds,
     })
     .from(reports)
     .innerJoin(locations, eq(reports.locationId, locations.id))
@@ -240,7 +260,7 @@ export function addReport(newReport: NewReport): Promise<number> {
 
 export function updateReport(
   reportId: number,
-  update: Partial<NewReport>,
+  update: UpdateReport,
 ): Promise<void> {
   return db
     .update(reports)
@@ -253,5 +273,75 @@ export function deleteReport(reportId: number): Promise<void> {
   return db
     .delete(reports)
     .where(eq(reports.id, reportId))
+    .then(() => undefined);
+}
+
+export function getImagesByReportId(reportId: number): Promise<ReportImage[]> {
+  return db
+    .select({
+      id: reportImages.id,
+      reportId: reportImages.reportId,
+      imageKey: reportImages.imageKey,
+      status: reportImages.status,
+    })
+    .from(reportImages)
+    .where(
+      and(
+        eq(reportImages.reportId, reportId),
+        eq(reportImages.status, "complete"),
+      ),
+    ) as Promise<ReportImage[]>;
+}
+
+export async function getAllImageKeysByReportId(
+  reportId: number,
+): Promise<string[]> {
+  const rows = await db
+    .select({ imageKey: reportImages.imageKey })
+    .from(reportImages)
+    .where(
+      and(
+        eq(reportImages.reportId, reportId),
+        isNotNull(reportImages.imageKey),
+      ),
+    );
+  return rows.map((r) => r.imageKey as string);
+}
+
+export async function createPendingReportImages(
+  reportId: number,
+  count: number,
+): Promise<number[]> {
+  const ids: number[] = [];
+  for (let i = 0; i < count; i++) {
+    const result = await db
+      .insert(reportImages)
+      .values({ reportId, status: "uploading" });
+    ids.push(result[0].insertId);
+  }
+  return ids;
+}
+
+export function updateReportImage(id: number, imageKey: string): Promise<void> {
+  return db
+    .update(reportImages)
+    .set({ imageKey, status: "complete" })
+    .where(eq(reportImages.id, id))
+    .then(() => undefined);
+}
+
+export function deleteReportImagesByKeys(
+  reportId: number,
+  imageKeys: string[],
+): Promise<void> {
+  if (!imageKeys.length) return Promise.resolve();
+  return db
+    .delete(reportImages)
+    .where(
+      and(
+        eq(reportImages.reportId, reportId),
+        inArray(reportImages.imageKey, imageKeys),
+      ),
+    )
     .then(() => undefined);
 }

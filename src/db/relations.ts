@@ -21,6 +21,13 @@ export const allRelations = defineRelations(schema, (r) => ({
       to: r.locations.id,
     }),
     usgsReadings: r.many.usgsReadings(),
+    reportImages: r.many.reportImages(),
+  },
+  reportImages: {
+    report: r.one.reports({
+      from: r.reportImages.reportId,
+      to: r.reports.id,
+    }),
   },
   friends: {
     userOne: r.one.users({

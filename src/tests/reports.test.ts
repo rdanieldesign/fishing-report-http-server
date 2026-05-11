@@ -9,15 +9,8 @@ jest.mock("../features/reports/reports.repository");
 jest.mock("../features/locations/locations.repository");
 jest.mock("../queue/usgs.queue");
 jest.mock("../services/image-service", () => ({
-  uploadMultipleImages: () => [
-    (req: any, _res: any, next: any) => {
-      req.uploadedImages = [];
-      next();
-    },
-  ],
   getSignedImageUrl: async () => "https://mock-s3.example.com/image",
   deleteMultipleImages: jest.fn(),
-  deleteSingleImage: jest.fn(),
 }));
 
 const USER_ID = 1;
@@ -86,8 +79,8 @@ describe("GET /api/reports/:id", () => {
     jest.spyOn(reportsRepo, "getReportById").mockResolvedValueOnce({
       id: 1,
       authorId: USER_ID,
-      imageIds: null,
     } as any);
+    jest.spyOn(reportsRepo, "getImagesByReportId").mockResolvedValueOnce([]);
 
     const res = await request(app)
       .get("/api/reports/1")
@@ -99,6 +92,7 @@ describe("GET /api/reports/:id", () => {
 
   it("returns 200 and null when the user cannot see the report", async () => {
     jest.spyOn(reportsRepo, "getReportById").mockResolvedValueOnce(undefined);
+    jest.spyOn(reportsRepo, "getImagesByReportId").mockResolvedValueOnce([]);
 
     const res = await request(app)
       .get("/api/reports/99")
@@ -146,8 +140,8 @@ describe("PUT /api/reports/:id", () => {
     jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
       id: 1,
       authorId: USER_ID,
-      imageIds: null,
     } as any);
+    jest.spyOn(reportsRepo, "getImagesByReportId").mockResolvedValueOnce([]);
     jest.spyOn(reportsRepo, "updateReport").mockResolvedValueOnce(undefined);
 
     const res = await request(app)
@@ -162,7 +156,6 @@ describe("PUT /api/reports/:id", () => {
     jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
       id: 1,
       authorId: 999,
-      imageIds: null,
     } as any);
 
     const res = await request(app)
@@ -179,8 +172,10 @@ describe("DELETE /api/reports/:id", () => {
     jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
       id: 1,
       authorId: USER_ID,
-      imageIds: null,
     } as any);
+    jest
+      .spyOn(reportsRepo, "getAllImageKeysByReportId")
+      .mockResolvedValueOnce([]);
     jest.spyOn(reportsRepo, "deleteReport").mockResolvedValueOnce(undefined);
 
     const res = await request(app)
@@ -194,7 +189,6 @@ describe("DELETE /api/reports/:id", () => {
     jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
       id: 1,
       authorId: 999,
-      imageIds: null,
     } as any);
 
     const res = await request(app)
@@ -218,7 +212,6 @@ describe("POST /api/reports/:id/usgs", () => {
     jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
       id: 1,
       authorId: USER_ID,
-      imageIds: null,
     } as any);
 
     const res = await request(app)
@@ -238,7 +231,6 @@ describe("POST /api/reports/:id/usgs", () => {
     jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
       id: 1,
       authorId: 999,
-      imageIds: null,
     } as any);
 
     const res = await request(app)
@@ -274,16 +266,13 @@ describe("addReport service with async USGS queue", () => {
       usgsLocationId: "usgs-12345",
     });
 
-    await reportsService.addReport(
-      {
-        locationId: 1,
-        date: "2024-06-01",
-        catchCount: 5,
-        authorId: USER_ID,
-        notes: "Great catch",
-      },
-      [],
-    );
+    await reportsService.addReport({
+      locationId: 1,
+      date: "2024-06-01",
+      catchCount: 5,
+      authorId: USER_ID,
+      notes: "Great catch",
+    });
 
     expect(usgsQueue.add).toHaveBeenCalledWith("fetch-usgs", {
       postId: 42,
@@ -302,16 +291,13 @@ describe("addReport service with async USGS queue", () => {
       usgsLocationId: null,
     });
 
-    await reportsService.addReport(
-      {
-        locationId: 2,
-        date: "2024-06-02",
-        catchCount: 3,
-        authorId: USER_ID,
-        notes: "Good day",
-      },
-      [],
-    );
+    await reportsService.addReport({
+      locationId: 2,
+      date: "2024-06-02",
+      catchCount: 3,
+      authorId: USER_ID,
+      notes: "Good day",
+    });
 
     expect(usgsQueue.add).not.toHaveBeenCalled();
   });
@@ -321,16 +307,13 @@ describe("addReport service with async USGS queue", () => {
     jest.spyOn(reportsRepo, "addReport").mockResolvedValueOnce(44);
     jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce(undefined);
 
-    await reportsService.addReport(
-      {
-        locationId: 999,
-        date: "2024-06-03",
-        catchCount: 2,
-        authorId: USER_ID,
-        notes: "Quick stop",
-      },
-      [],
-    );
+    await reportsService.addReport({
+      locationId: 999,
+      date: "2024-06-03",
+      catchCount: 2,
+      authorId: USER_ID,
+      notes: "Quick stop",
+    });
 
     expect(usgsQueue.add).not.toHaveBeenCalled();
   });
