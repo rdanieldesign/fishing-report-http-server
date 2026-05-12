@@ -7,7 +7,7 @@ apply-dev:
 	terraform workspace select dev && terraform apply -var-file="terraform.dev.tfvars"
 
 plan-prod:
-	terraform workspace select prod && terraform plan
+	terraform workspace select default && terraform plan
 
 apply-prod:
-	terraform workspace select prod && terraform apply
+	terraform workspace select default && terraform apply
