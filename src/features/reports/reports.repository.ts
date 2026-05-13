@@ -161,40 +161,6 @@ export async function getReportDetails(
   return rows;
 }
 
-// TODO: remove once migrated off REST
-export async function getReportById(
-  reportId: number,
-  currentUserId: number,
-): Promise<ReportDetail | undefined> {
-  const reportQuery = db
-    .selectDistinct({
-      id: reports.id,
-      locationId: reports.locationId,
-      locationName: locations.name,
-      catchCount: reports.catchCount,
-      date: reports.date,
-      notes: reports.notes,
-      authorId: reports.authorId,
-      authorName: users.name,
-    })
-    .from(reports)
-    .innerJoin(locations, eq(reports.locationId, locations.id))
-    .innerJoin(users, eq(reports.authorId, users.id))
-    .leftJoin(friends, friendsJoin(currentUserId))
-    .where(and(eq(reports.id, reportId), visibilityCondition(currentUserId)))
-    .limit(1);
-
-  const [rows, usgsReadings] = await Promise.all([
-    reportQuery,
-    getUsgsReadingsForReport(reportId),
-  ]);
-
-  const row = rows[0];
-  if (!row) return undefined;
-
-  return { ...row, usgsReadings };
-}
-
 type FindFirstConfig = NonNullable<
   Parameters<typeof db.query.reports.findFirst>[0]
 >;
@@ -285,12 +251,7 @@ export function getImagesByReportId(reportId: number): Promise<ReportImage[]> {
       status: reportImages.status,
     })
     .from(reportImages)
-    .where(
-      and(
-        eq(reportImages.reportId, reportId),
-        eq(reportImages.status, "complete"),
-      ),
-    ) as Promise<ReportImage[]>;
+    .where(and(eq(reportImages.reportId, reportId))) as Promise<ReportImage[]>;
 }
 
 export async function getAllImageKeysByReportId(

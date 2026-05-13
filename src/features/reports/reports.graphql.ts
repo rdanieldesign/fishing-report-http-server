@@ -34,13 +34,17 @@ export const UsgsReadingType = builder.drizzleObject("usgsReadings", {
 });
 
 const ReportImageType = builder.objectRef<{
-  imageId: string;
-  imageURL: string;
+  id: number;
+  imageKey: string | null;
+  imageURL: string | null;
+  status: string;
 }>("ReportImage");
 ReportImageType.implement({
   fields: (t) => ({
-    imageId: t.exposeString("imageId"),
-    imageURL: t.exposeString("imageURL"),
+    id: t.exposeInt("id"),
+    imageKey: t.exposeString("imageKey", { nullable: true }),
+    imageURL: t.exposeString("imageURL", { nullable: true }),
+    status: t.exposeString("status"),
   }),
 });
 
@@ -73,9 +77,11 @@ export const ReportDetailType = builder.drizzleObject("reports", {
         const images = await getImagesByReportId(report.id);
         if (!images.length) return null;
         return Promise.all(
-          images.map(async ({ imageKey }) => ({
-            imageId: imageKey,
-            imageURL: await getSignedImageUrl(imageKey),
+          images.map(async ({ imageKey, status, id }) => ({
+            imageKey,
+            id,
+            imageURL: imageKey ? await getSignedImageUrl(imageKey) : null,
+            status,
           })),
         );
       },

@@ -15,7 +15,6 @@ import {
   deleteReportImagesByKeys,
   getAllImageKeysByReportId,
   getImagesByReportId,
-  getReportById,
   getReportByIdForOwnership,
   getReportDetails,
   type NewReport,
@@ -27,7 +26,7 @@ import { usgsQueue } from "../../queue/usgs.queue";
 import { getLocation } from "../locations/locations.repository";
 
 export type ReportWithImages = ReportDetail & {
-  images?: { imageId: string; imageURL: string }[];
+  images?: { imageKey: string; imageURL: string }[];
 };
 
 function sendUnauthorizedMessage(): Promise<never> {
@@ -48,32 +47,6 @@ export function getReports(
 ): Promise<Report[] | ReportDetail[]> {
   if (!currentUserId) return sendUnauthorizedMessage();
   return getReportDetails(params, currentUserId);
-}
-
-export async function getReport(
-  reportId: string,
-  currentUserId: number | undefined,
-): Promise<ReportWithImages | null> {
-  if (!currentUserId) return sendUnauthorizedMessage();
-
-  const reportIdNum = parseInt(reportId);
-  const [row, images] = await Promise.all([
-    getReportById(reportIdNum, currentUserId),
-    getImagesByReportId(reportIdNum),
-  ]);
-
-  if (!row) return null;
-  if (!images.length) return row;
-
-  return {
-    ...row,
-    images: await Promise.all(
-      images.map(async ({ imageKey }) => ({
-        imageId: imageKey,
-        imageURL: await getSignedImageUrl(imageKey),
-      })),
-    ),
-  };
 }
 
 async function createPendingImageUploads(
@@ -124,7 +97,7 @@ export async function updateReport(
     date: string;
     notes: string;
     newImageMetadata?: ImageMetadata[];
-    imageIdsToKeep?: string[];
+    imageKeysToKeep?: string[];
   },
   userId: number | undefined,
 ): Promise<{ signedImageUrls: ISignedImageURL[] | null }> {
@@ -136,11 +109,11 @@ export async function updateReport(
     return sendUnauthorizedMessage();
   }
 
-  const imageIdsToKeep = body.imageIdsToKeep ?? [];
+  const imageKeysToKeep = body.imageKeysToKeep ?? [];
   const currentImages = await getImagesByReportId(reportIdNum);
   const removedKeys = currentImages
     .map((img) => img.imageKey)
-    .filter((key) => !imageIdsToKeep.includes(key));
+    .filter((key) => !imageKeysToKeep.includes(key));
 
   const newUploads = body.newImageMetadata?.length
     ? createPendingImageUploads(reportIdNum, body.newImageMetadata)
