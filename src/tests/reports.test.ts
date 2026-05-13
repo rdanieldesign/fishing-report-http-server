@@ -74,35 +74,6 @@ describe("GET /api/reports/my-reports", () => {
   });
 });
 
-describe("GET /api/reports/:id", () => {
-  it("returns 200 and an object when the user can see the report", async () => {
-    jest.spyOn(reportsRepo, "getReportById").mockResolvedValueOnce({
-      id: 1,
-      authorId: USER_ID,
-    } as any);
-    jest.spyOn(reportsRepo, "getImagesByReportId").mockResolvedValueOnce([]);
-
-    const res = await request(app)
-      .get("/api/reports/1")
-      .set("x-access-token", token);
-
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty("id");
-  });
-
-  it("returns 200 and null when the user cannot see the report", async () => {
-    jest.spyOn(reportsRepo, "getReportById").mockResolvedValueOnce(undefined);
-    jest.spyOn(reportsRepo, "getImagesByReportId").mockResolvedValueOnce([]);
-
-    const res = await request(app)
-      .get("/api/reports/99")
-      .set("x-access-token", token);
-
-    expect(res.status).toBe(200);
-    expect(res.body).toBeNull();
-  });
-});
-
 describe("POST /api/reports", () => {
   it("returns 200", async () => {
     jest.spyOn(reportsRepo, "addReport").mockResolvedValueOnce(1);

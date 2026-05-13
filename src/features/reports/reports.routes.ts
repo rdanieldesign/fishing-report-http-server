@@ -6,7 +6,6 @@ import {
   addReport,
   deleteReport,
   enqueueUsgsForReport,
-  getReport,
   getReports,
   updateReport,
 } from "./reports.service";
@@ -43,17 +42,6 @@ reportsRouter.get(
       authorId: req.authenticatedUserId,
     };
     handleResponse(getReports(params, req.authenticatedUserId), res);
-  },
-);
-
-reportsRouter.get(
-  "/:reportId",
-  [authenticate],
-  (req: Request, res: Response) => {
-    handleResponse(
-      getReport(req.params.reportId, req.authenticatedUserId),
-      res,
-    );
   },
 );
 
