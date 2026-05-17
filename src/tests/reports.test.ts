@@ -35,6 +35,9 @@ describe("Authentication middleware — GET /api/reports", () => {
 
   it("passes through with a valid token", async () => {
     jest.spyOn(reportsRepo, "getReportDetails").mockResolvedValueOnce([]);
+    jest
+      .spyOn(reportsRepo, "getFirstImageKeysByReportIds")
+      .mockResolvedValueOnce(new Map());
 
     const res = await request(app)
       .get("/api/reports")
@@ -49,6 +52,9 @@ describe("GET /api/reports", () => {
     jest
       .spyOn(reportsRepo, "getReportDetails")
       .mockResolvedValueOnce([{ id: 1, authorId: USER_ID } as any]);
+    jest
+      .spyOn(reportsRepo, "getFirstImageKeysByReportIds")
+      .mockResolvedValueOnce(new Map());
 
     const res = await request(app)
       .get("/api/reports")
@@ -64,6 +70,9 @@ describe("GET /api/reports/my-reports", () => {
     jest
       .spyOn(reportsRepo, "getReportDetails")
       .mockResolvedValueOnce([{ id: 1, authorId: USER_ID } as any]);
+    jest
+      .spyOn(reportsRepo, "getFirstImageKeysByReportIds")
+      .mockResolvedValueOnce(new Map());
 
     const res = await request(app)
       .get("/api/reports/my-reports")

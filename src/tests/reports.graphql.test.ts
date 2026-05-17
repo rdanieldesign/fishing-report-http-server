@@ -78,6 +78,9 @@ describe("allReports query", () => {
     jest
       .spyOn(reportsRepo, "getReportDetails")
       .mockResolvedValueOnce([MOCK_REPORT]);
+    jest
+      .spyOn(reportsRepo, "getFirstImageKeysByReportIds")
+      .mockResolvedValueOnce(new Map());
     (db.query as any).reports.findMany.mockResolvedValueOnce([MOCK_REPORT]);
 
     const res = await request(app)
@@ -99,6 +102,9 @@ describe("allReports query", () => {
 
   it("returns an empty array when the user has no visible reports", async () => {
     jest.spyOn(reportsRepo, "getReportDetails").mockResolvedValueOnce([]);
+    jest
+      .spyOn(reportsRepo, "getFirstImageKeysByReportIds")
+      .mockResolvedValueOnce(new Map());
     (db.query as any).reports.findMany.mockResolvedValueOnce([]);
 
     const res = await request(app)

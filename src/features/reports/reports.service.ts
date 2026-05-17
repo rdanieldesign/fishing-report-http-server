@@ -16,6 +16,7 @@ import {
   getAllImageKeysByReportId,
   getImagesByReportId,
   getReportByIdForOwnership,
+  getFirstImageKeysByReportIds,
   getReportDetails,
   type NewReport,
   updateReport as updateReportRepo,
@@ -41,12 +42,28 @@ function reportBelongsToUser(report: Report, userId: number): boolean {
   return report?.authorId === userId;
 }
 
-export function getReports(
+export async function getReports(
   params: { authorId?: number; locationId?: number } = {},
   currentUserId: number | undefined,
-): Promise<Report[] | ReportDetail[]> {
+): Promise<ReportDetail[]> {
   if (!currentUserId) return sendUnauthorizedMessage();
-  return getReportDetails(params, currentUserId);
+  const reportList = await getReportDetails(params, currentUserId);
+  const imageKeyMap = await getFirstImageKeysByReportIds(
+    reportList.map((r) => r.id),
+  );
+  const thumbnailUrls = await Promise.all(
+    Array.from(imageKeyMap.entries()).map(async ([reportId, key]) => ({
+      reportId,
+      url: await getSignedImageUrl(key),
+    })),
+  );
+  const thumbnailByReportId = new Map(
+    thumbnailUrls.map(({ reportId, url }) => [reportId, url]),
+  );
+  return reportList.map((report) => ({
+    ...report,
+    thumbnailUrl: thumbnailByReportId.get(report.id) ?? null,
+  }));
 }
 
 async function createPendingImageUploads(

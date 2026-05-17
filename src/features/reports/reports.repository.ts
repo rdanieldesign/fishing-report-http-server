@@ -32,6 +32,7 @@ export type ReportDetail = {
   notes: string;
   authorId: number;
   authorName: string;
+  thumbnailUrl?: string | null;
   usgsReadings?: UsgsReading[];
 };
 
@@ -252,6 +253,27 @@ export function getImagesByReportId(reportId: number): Promise<ReportImage[]> {
     })
     .from(reportImages)
     .where(and(eq(reportImages.reportId, reportId))) as Promise<ReportImage[]>;
+}
+
+export async function getFirstImageKeysByReportIds(
+  reportIds: number[],
+): Promise<Map<number, string>> {
+  if (!reportIds.length) return new Map();
+  const rows = await db
+    .select({
+      reportId: reportImages.reportId,
+      imageKey: sql<string>`MIN(${reportImages.imageKey})`,
+    })
+    .from(reportImages)
+    .where(
+      and(
+        inArray(reportImages.reportId, reportIds),
+        eq(reportImages.status, "complete"),
+        isNotNull(reportImages.imageKey),
+      ),
+    )
+    .groupBy(reportImages.reportId);
+  return new Map(rows.map((r) => [r.reportId, r.imageKey]));
 }
 
 export async function getAllImageKeysByReportId(
