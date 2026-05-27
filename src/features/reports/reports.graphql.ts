@@ -4,8 +4,8 @@ import {
   getFirstImageKeysByReportIds,
   getImagesByReportId,
   getReportByIdGQL,
+  getReportsGQL,
 } from "./reports.repository";
-import { getReports } from "./reports.service";
 
 export const UserType = builder.drizzleObject("users", {
   name: "User",
@@ -114,8 +114,7 @@ builder.queryField("allReports", (t) =>
       authorId: t.arg.int({ required: false }),
     },
     resolve: async (query, root, args, ctx) => {
-      // TODO: pass query to orm to only select requested fields
-      return getReports(args, parseInt(ctx.currentUserId as string));
+      return getReportsGQL(query, args, parseInt(ctx.currentUserId as string));
     },
   }),
 );

@@ -15,18 +15,12 @@ import {
   getAllImageKeysByReportId,
   getImagesByReportId,
   getReportByIdForOwnership,
-  getReportsList,
   type NewReport,
   updateReport as updateReportRepo,
   type Report,
-  type ReportDetail,
 } from "./reports.repository";
 import { usgsQueue } from "../../queue/usgs.queue";
 import { getLocation } from "../locations/locations.repository";
-
-export type ReportWithImages = ReportDetail & {
-  images?: { imageKey: string; imageURL: string }[];
-};
 
 function sendUnauthorizedMessage(): Promise<never> {
   const error: IError = {
@@ -38,14 +32,6 @@ function sendUnauthorizedMessage(): Promise<never> {
 
 function reportBelongsToUser(report: Report, userId: number): boolean {
   return report?.authorId === userId;
-}
-
-export async function getReports(
-  params: { authorId?: number | null; locationId?: number | null } = {},
-  currentUserId: number | undefined,
-): Promise<ReportDetail[]> {
-  if (!currentUserId) return sendUnauthorizedMessage();
-  return getReportsList(params, currentUserId);
 }
 
 async function createPendingImageUploads(

@@ -4,10 +4,6 @@ import * as reportsRepo from "../features/reports/reports.repository";
 import { db } from "../db";
 import { signTestToken } from "./helpers";
 
-// The Pothos DrizzlePlugin's ModelLoader always re-fetches via db.query.<table>.findMany
-// after the resolver returns, using a DataLoader-style batch. We mock both layers:
-// - the repository (for the service call in the resolver)
-// - db.query.reports.findMany (for the ModelLoader's field resolution)
 jest.mock("../features/reports/reports.repository");
 jest.mock("../db", () => ({
   db: {
@@ -36,19 +32,9 @@ const ALL_REPORTS_QUERY = `
   }
 `;
 
-const MOCK_REPORT = {
-  id: 1,
-  locationId: 1,
-  locationName: "Lake Ontario",
-  date: "2024-06-01",
-  catchCount: 3,
-  notes: "Good day",
-  authorId: USER_ID,
-  authorName: "Richard",
-};
-
 const MOCK_DB_REPORT = {
   id: 1,
+  locationId: 1,
   date: "2024-06-01",
   catchCount: 3,
   notes: "Good day",
@@ -86,8 +72,8 @@ describe("Authentication middleware — POST /graphql", () => {
 describe("allReports query", () => {
   it("returns an array of reports for an authenticated user", async () => {
     jest
-      .spyOn(reportsRepo, "getReportsList")
-      .mockResolvedValueOnce([MOCK_REPORT as any]);
+      .spyOn(reportsRepo, "getReportsGQL")
+      .mockResolvedValueOnce([MOCK_DB_REPORT]);
     (db.query as any).reports.findMany.mockResolvedValueOnce([MOCK_DB_REPORT]);
 
     const res = await request(app)
@@ -108,7 +94,7 @@ describe("allReports query", () => {
   });
 
   it("returns an empty array when the user has no visible reports", async () => {
-    jest.spyOn(reportsRepo, "getReportsList").mockResolvedValueOnce([]);
+    jest.spyOn(reportsRepo, "getReportsGQL").mockResolvedValueOnce([]);
     (db.query as any).reports.findMany.mockResolvedValueOnce([]);
 
     const res = await request(app)

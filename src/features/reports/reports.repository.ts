@@ -1,40 +1,11 @@
-import {
-  and,
-  desc,
-  eq,
-  exists,
-  inArray,
-  isNotNull,
-  or,
-  sql,
-} from "drizzle-orm";
-import type { InferSelectModel } from "drizzle-orm";
+import { and, eq, exists, inArray, isNotNull, or, sql } from "drizzle-orm";
+import type { Column, InferSelectModel } from "drizzle-orm";
 import { db } from "../../db";
-import {
-  friends,
-  locations,
-  reportImages,
-  reports,
-  users,
-  usgsReadings,
-} from "../../db/schema";
+import { friends, reportImages, reports, usgsReadings } from "../../db/schema";
 import { FriendStatus } from "../../enums/friend-enum";
 import type { UsgsReading } from "../usgs/usgs.service";
 
 export type Report = InferSelectModel<typeof reports>;
-
-export type ReportDetail = {
-  id: number;
-  locationId: number;
-  locationName: string;
-  catchCount: number;
-  date: string;
-  notes: string;
-  authorId: number;
-  authorName: string;
-  thumbnailUrl?: string | null;
-  usgsReadings?: UsgsReading[];
-};
 
 export type ReportImage = {
   id: number;
@@ -59,24 +30,28 @@ export type UpdateReport = {
   authorId: number;
 };
 
-// The visibility filter: current user can see their own reports and confirmed friends' reports.
-function visibilityCondition(currentUserId: number) {
-  return or(
-    eq(reports.authorId, currentUserId),
-    and(
-      eq(friends.status, FriendStatus.Confirmed),
-      or(
-        eq(reports.authorId, friends.userOneId),
-        eq(reports.authorId, friends.userTwoId),
+// Visibility guard for relational queries: returns an EXISTS subquery that is true
+// when currentUserId is a confirmed friend of the report's author.
+function friendVisibilityExists(currentUserId: number, authorIdCol: Column) {
+  return exists(
+    db
+      .select({ n: sql`1` })
+      .from(friends)
+      .where(
+        and(
+          eq(friends.status, FriendStatus.Confirmed),
+          or(
+            and(
+              eq(friends.userOneId, currentUserId),
+              eq(friends.userTwoId, authorIdCol),
+            ),
+            and(
+              eq(friends.userTwoId, currentUserId),
+              eq(friends.userOneId, authorIdCol),
+            ),
+          ),
+        ),
       ),
-    ),
-  );
-}
-
-function friendsJoin(currentUserId: number) {
-  return or(
-    eq(friends.userOneId, currentUserId),
-    eq(friends.userTwoId, currentUserId),
   );
 }
 
@@ -98,41 +73,6 @@ export async function getUsgsReadingsForReport(
   return rows as UsgsReading[];
 }
 
-export async function getReportsList(
-  params: { authorId?: number | null; locationId?: number | null },
-  currentUserId: number,
-): Promise<ReportDetail[]> {
-  const conditions = [
-    params.authorId !== undefined && params.authorId !== null
-      ? eq(reports.authorId, params.authorId)
-      : undefined,
-    params.locationId !== undefined && params.locationId !== null
-      ? eq(reports.locationId, params.locationId)
-      : undefined,
-    visibilityCondition(currentUserId),
-  ].filter(Boolean) as ReturnType<typeof eq>[];
-
-  const rows = await db
-    .selectDistinct({
-      id: reports.id,
-      locationId: reports.locationId,
-      locationName: locations.name,
-      catchCount: reports.catchCount,
-      date: reports.date,
-      notes: reports.notes,
-      authorId: reports.authorId,
-      authorName: users.name,
-    })
-    .from(reports)
-    .innerJoin(locations, eq(reports.locationId, locations.id))
-    .innerJoin(users, eq(reports.authorId, users.id))
-    .leftJoin(friends, friendsJoin(currentUserId))
-    .where(and(...conditions))
-    .orderBy(desc(reports.date));
-
-  return rows;
-}
-
 type FindFirstConfig = NonNullable<
   Parameters<typeof db.query.reports.findFirst>[0]
 >;
@@ -151,29 +91,38 @@ export function getReportByIdGQL(
           { authorId: currentUserId },
           {
             RAW: (table) =>
-              exists(
-                db
-                  .select({ n: sql`1` })
-                  .from(friends)
-                  .where(
-                    and(
-                      eq(friends.status, FriendStatus.Confirmed),
-                      or(
-                        and(
-                          eq(friends.userOneId, currentUserId),
-                          eq(friends.userTwoId, table.authorId),
-                        ),
-                        and(
-                          eq(friends.userTwoId, currentUserId),
-                          eq(friends.userOneId, table.authorId),
-                        ),
-                      ),
-                    ),
-                  ),
-              ),
+              friendVisibilityExists(currentUserId, table.authorId),
           },
         ],
       },
+    }),
+  );
+}
+
+type FindManyConfig = NonNullable<
+  Parameters<typeof db.query.reports.findMany>[0]
+>;
+type PothosQueryFnMany = (opts: FindManyConfig) => FindManyConfig;
+
+export function getReportsGQL(
+  query: PothosQueryFnMany,
+  params: { authorId?: number | null; locationId?: number | null },
+  currentUserId: number,
+) {
+  return db.query.reports.findMany(
+    query({
+      where: {
+        ...(params.authorId != null ? { authorId: params.authorId } : {}),
+        ...(params.locationId != null ? { locationId: params.locationId } : {}),
+        OR: [
+          { authorId: currentUserId },
+          {
+            RAW: (table) =>
+              friendVisibilityExists(currentUserId, table.authorId),
+          },
+        ],
+      },
+      orderBy: (fields, { desc: d }) => [d(fields.date)],
     }),
   );
 }
