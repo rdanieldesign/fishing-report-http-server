@@ -29,7 +29,9 @@ const ALL_REPORTS_QUERY = `
       date
       catchCount
       notes
-      authorId
+      author {
+        id
+      }
     }
   }
 `;
@@ -43,7 +45,15 @@ const MOCK_REPORT = {
   notes: "Good day",
   authorId: USER_ID,
   authorName: "Richard",
-  imageIds: null,
+};
+
+const MOCK_DB_REPORT = {
+  id: 1,
+  date: "2024-06-01",
+  catchCount: 3,
+  notes: "Good day",
+  authorId: USER_ID,
+  author: { id: USER_ID, name: "Richard" },
 };
 
 beforeAll(async () => {
@@ -76,12 +86,9 @@ describe("Authentication middleware — POST /graphql", () => {
 describe("allReports query", () => {
   it("returns an array of reports for an authenticated user", async () => {
     jest
-      .spyOn(reportsRepo, "getReportDetails")
-      .mockResolvedValueOnce([MOCK_REPORT]);
-    jest
-      .spyOn(reportsRepo, "getFirstImageKeysByReportIds")
-      .mockResolvedValueOnce(new Map());
-    (db.query as any).reports.findMany.mockResolvedValueOnce([MOCK_REPORT]);
+      .spyOn(reportsRepo, "getReportsList")
+      .mockResolvedValueOnce([MOCK_REPORT as any]);
+    (db.query as any).reports.findMany.mockResolvedValueOnce([MOCK_DB_REPORT]);
 
     const res = await request(app)
       .post("/graphql")
@@ -96,15 +103,12 @@ describe("allReports query", () => {
       date: "2024-06-01",
       catchCount: 3,
       notes: "Good day",
-      authorId: USER_ID,
+      author: { id: USER_ID },
     });
   });
 
   it("returns an empty array when the user has no visible reports", async () => {
-    jest.spyOn(reportsRepo, "getReportDetails").mockResolvedValueOnce([]);
-    jest
-      .spyOn(reportsRepo, "getFirstImageKeysByReportIds")
-      .mockResolvedValueOnce(new Map());
+    jest.spyOn(reportsRepo, "getReportsList").mockResolvedValueOnce([]);
     (db.query as any).reports.findMany.mockResolvedValueOnce([]);
 
     const res = await request(app)

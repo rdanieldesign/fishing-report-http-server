@@ -20,69 +20,6 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-describe("Authentication middleware — GET /api/reports", () => {
-  it("returns 401 with no token", async () => {
-    const res = await request(app).get("/api/reports");
-    expect(res.status).toBe(401);
-  });
-
-  it("returns 401 with an invalid token", async () => {
-    const res = await request(app)
-      .get("/api/reports")
-      .set("x-access-token", "invalid-token");
-    expect(res.status).toBe(401);
-  });
-
-  it("passes through with a valid token", async () => {
-    jest.spyOn(reportsRepo, "getReportDetails").mockResolvedValueOnce([]);
-    jest
-      .spyOn(reportsRepo, "getFirstImageKeysByReportIds")
-      .mockResolvedValueOnce(new Map());
-
-    const res = await request(app)
-      .get("/api/reports")
-      .set("x-access-token", token);
-
-    expect(res.status).toBe(200);
-  });
-});
-
-describe("GET /api/reports", () => {
-  it("returns 200 and an array for an authenticated user", async () => {
-    jest
-      .spyOn(reportsRepo, "getReportDetails")
-      .mockResolvedValueOnce([{ id: 1, authorId: USER_ID } as any]);
-    jest
-      .spyOn(reportsRepo, "getFirstImageKeysByReportIds")
-      .mockResolvedValueOnce(new Map());
-
-    const res = await request(app)
-      .get("/api/reports")
-      .set("x-access-token", token);
-
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-  });
-});
-
-describe("GET /api/reports/my-reports", () => {
-  it("returns 200 and an array filtered to current user", async () => {
-    jest
-      .spyOn(reportsRepo, "getReportDetails")
-      .mockResolvedValueOnce([{ id: 1, authorId: USER_ID } as any]);
-    jest
-      .spyOn(reportsRepo, "getFirstImageKeysByReportIds")
-      .mockResolvedValueOnce(new Map());
-
-    const res = await request(app)
-      .get("/api/reports/my-reports")
-      .set("x-access-token", token);
-
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-  });
-});
-
 describe("POST /api/reports", () => {
   it("returns 200", async () => {
     jest.spyOn(reportsRepo, "addReport").mockResolvedValueOnce(1);

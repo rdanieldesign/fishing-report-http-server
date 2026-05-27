@@ -6,44 +6,11 @@ import {
   addReport,
   deleteReport,
   enqueueUsgsForReport,
-  getReports,
   updateReport,
 } from "./reports.service";
 import { updateReportImage } from "./reports.repository";
-import { ParsedQs } from "qs";
 
 export const reportsRouter = Router();
-
-function getReportParams(reqParams: ParsedQs): {
-  authorId?: number;
-  locationId?: number;
-} {
-  const params: { authorId?: number; locationId?: number } = {};
-  if (reqParams.authorId)
-    params.authorId = parseInt(reqParams.authorId as string);
-  if (reqParams.locationId)
-    params.locationId = parseInt(reqParams.locationId as string);
-  return params;
-}
-
-reportsRouter.get("/", [authenticate], (req: Request, res: Response) => {
-  const params: { authorId?: number; locationId?: number } = getReportParams(
-    req.query,
-  );
-  handleResponse(getReports(params, req.authenticatedUserId), res);
-});
-
-reportsRouter.get(
-  "/my-reports",
-  [authenticate],
-  (req: Request, res: Response) => {
-    const params: { authorId?: number; locationId?: number } = {
-      ...getReportParams(req.query),
-      authorId: req.authenticatedUserId,
-    };
-    handleResponse(getReports(params, req.authenticatedUserId), res);
-  },
-);
 
 reportsRouter.post("/", [authenticate], (req: Request, res: Response) => {
   handleResponse(

@@ -80,35 +80,6 @@ function friendsJoin(currentUserId: number) {
   );
 }
 
-export function getReports(
-  params: { authorId?: number; locationId?: number },
-  currentUserId: number,
-): Promise<Report[]> {
-  const conditions = [
-    params.authorId !== undefined
-      ? eq(reports.authorId, params.authorId)
-      : undefined,
-    params.locationId !== undefined
-      ? eq(reports.locationId, params.locationId)
-      : undefined,
-    visibilityCondition(currentUserId),
-  ].filter(Boolean) as ReturnType<typeof eq>[];
-
-  return db
-    .selectDistinct({
-      id: reports.id,
-      locationId: reports.locationId,
-      date: reports.date,
-      catchCount: reports.catchCount,
-      notes: reports.notes,
-      authorId: reports.authorId,
-    })
-    .from(reports)
-    .leftJoin(friends, friendsJoin(currentUserId))
-    .where(and(...conditions))
-    .orderBy(desc(reports.date));
-}
-
 export async function getUsgsReadingsForReport(
   reportId: number,
 ): Promise<UsgsReading[]> {
@@ -127,15 +98,15 @@ export async function getUsgsReadingsForReport(
   return rows as UsgsReading[];
 }
 
-export async function getReportDetails(
-  params: { authorId?: number; locationId?: number },
+export async function getReportsList(
+  params: { authorId?: number | null; locationId?: number | null },
   currentUserId: number,
 ): Promise<ReportDetail[]> {
   const conditions = [
-    params.authorId !== undefined
+    params.authorId !== undefined && params.authorId !== null
       ? eq(reports.authorId, params.authorId)
       : undefined,
-    params.locationId !== undefined
+    params.locationId !== undefined && params.locationId !== null
       ? eq(reports.locationId, params.locationId)
       : undefined,
     visibilityCondition(currentUserId),

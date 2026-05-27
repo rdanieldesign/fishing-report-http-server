@@ -1,6 +1,10 @@
 import { builder } from "../../graphql/builder";
 import { getSignedImageUrl } from "../../services/image-service";
-import { getImagesByReportId, getReportByIdGQL } from "./reports.repository";
+import {
+  getFirstImageKeysByReportIds,
+  getImagesByReportId,
+  getReportByIdGQL,
+} from "./reports.repository";
 import { getReports } from "./reports.service";
 
 export const UserType = builder.drizzleObject("users", {
@@ -55,7 +59,19 @@ export const ReportType = builder.drizzleObject("reports", {
     date: t.exposeString("date"),
     catchCount: t.exposeInt("catchCount"),
     notes: t.exposeString("notes"),
-    authorId: t.exposeInt("authorId"),
+    author: t.relation("author"),
+    location: t.relation("location"),
+    // TODO: replace with a DataLoader to batch getFirstImageKeysByReportIds across all reports in a request (avoids N+1)
+    thumbnailUrl: t.field({
+      type: "String",
+      nullable: true,
+      select: { columns: { id: true } },
+      resolve: async (report) => {
+        const keyMap = await getFirstImageKeysByReportIds([report.id]);
+        const key = keyMap.get(report.id);
+        return key ? getSignedImageUrl(key) : null;
+      },
+    }),
   }),
 });
 
@@ -92,9 +108,14 @@ export const ReportDetailType = builder.drizzleObject("reports", {
 builder.queryField("allReports", (t) =>
   t.drizzleField({
     type: [ReportType],
+    nullable: true,
+    args: {
+      locationId: t.arg.int({ required: false }),
+      authorId: t.arg.int({ required: false }),
+    },
     resolve: async (query, root, args, ctx) => {
       // TODO: pass query to orm to only select requested fields
-      return getReports({}, parseInt(ctx.currentUserId as string));
+      return getReports(args, parseInt(ctx.currentUserId as string));
     },
   }),
 );

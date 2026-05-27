@@ -5,7 +5,6 @@ import type {
 } from "../../services/image-service";
 import {
   deleteMultipleImages,
-  getSignedImageUrl,
   getSignedPutURLs,
 } from "../../services/image-service";
 import {
@@ -16,8 +15,7 @@ import {
   getAllImageKeysByReportId,
   getImagesByReportId,
   getReportByIdForOwnership,
-  getFirstImageKeysByReportIds,
-  getReportDetails,
+  getReportsList,
   type NewReport,
   updateReport as updateReportRepo,
   type Report,
@@ -43,27 +41,11 @@ function reportBelongsToUser(report: Report, userId: number): boolean {
 }
 
 export async function getReports(
-  params: { authorId?: number; locationId?: number } = {},
+  params: { authorId?: number | null; locationId?: number | null } = {},
   currentUserId: number | undefined,
 ): Promise<ReportDetail[]> {
   if (!currentUserId) return sendUnauthorizedMessage();
-  const reportList = await getReportDetails(params, currentUserId);
-  const imageKeyMap = await getFirstImageKeysByReportIds(
-    reportList.map((r) => r.id),
-  );
-  const thumbnailUrls = await Promise.all(
-    Array.from(imageKeyMap.entries()).map(async ([reportId, key]) => ({
-      reportId,
-      url: await getSignedImageUrl(key),
-    })),
-  );
-  const thumbnailByReportId = new Map(
-    thumbnailUrls.map(({ reportId, url }) => [reportId, url]),
-  );
-  return reportList.map((report) => ({
-    ...report,
-    thumbnailUrl: thumbnailByReportId.get(report.id) ?? null,
-  }));
+  return getReportsList(params, currentUserId);
 }
 
 async function createPendingImageUploads(
