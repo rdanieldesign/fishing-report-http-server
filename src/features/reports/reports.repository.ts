@@ -1,7 +1,13 @@
 import { and, eq, exists, inArray, isNotNull, or, sql } from "drizzle-orm";
 import type { Column, InferSelectModel } from "drizzle-orm";
 import { db } from "../../db";
-import { friends, reportImages, reports, usgsReadings } from "../../db/schema";
+import {
+  friends,
+  locations,
+  reportImages,
+  reports,
+  usgsReadings,
+} from "../../db/schema";
 import { FriendStatus } from "../../enums/friend-enum";
 import type { UsgsReading } from "../usgs/usgs.service";
 
@@ -194,6 +200,44 @@ export async function getFirstImageKeysByReportIds(
     )
     .groupBy(reportImages.reportId);
   return new Map(rows.map((r) => [r.reportId, r.imageKey]));
+}
+
+export type TopLocationByMonth = {
+  locationId: number;
+  locationName: string;
+  locationGoogleMapsLink: string;
+  totalCatchCount: number;
+  month: number;
+};
+
+export async function getTopLocationByCurrentMonth(
+  currentUserId: number,
+): Promise<TopLocationByMonth | undefined> {
+  const rows = await db
+    .select({
+      locationId: locations.id,
+      locationName: locations.name,
+      locationGoogleMapsLink: locations.googleMapsLink,
+      totalCatchCount: sql<number>`SUM(${reports.catchCount})`,
+    })
+    .from(reports)
+    .innerJoin(locations, eq(reports.locationId, locations.id))
+    .where(
+      and(
+        sql`MONTH(${reports.date}) = MONTH(CURDATE())`,
+        sql`YEAR(${reports.date}) < YEAR(CURDATE())`,
+        or(
+          eq(reports.authorId, currentUserId),
+          friendVisibilityExists(currentUserId, reports.authorId),
+        ),
+      ),
+    )
+    .groupBy(locations.id, locations.name, locations.googleMapsLink)
+    .orderBy(sql`SUM(${reports.catchCount}) DESC`)
+    .limit(1);
+
+  if (!rows[0]) return undefined;
+  return { ...rows[0], month: new Date().getMonth() + 1 };
 }
 
 export async function getAllImageKeysByReportId(

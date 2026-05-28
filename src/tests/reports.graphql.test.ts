@@ -69,6 +69,74 @@ describe("Authentication middleware — POST /graphql", () => {
   });
 });
 
+const TOP_LOCATION_QUERY = `
+  query {
+    topLocationByCurrentMonth {
+      locationId
+      locationName
+      locationGoogleMapsLink
+      totalCatchCount
+      month
+    }
+  }
+`;
+
+describe("topLocationByCurrentMonth query", () => {
+  it("returns the top location when data exists", async () => {
+    jest
+      .spyOn(reportsRepo, "getTopLocationByCurrentMonth")
+      .mockResolvedValueOnce({
+        locationId: 2,
+        locationName: "Blue Creek",
+        locationGoogleMapsLink: "https://maps.google.com/?q=blue-creek",
+        totalCatchCount: 14,
+        month: 5,
+      });
+
+    const res = await request(app)
+      .post("/graphql")
+      .set("x-access-token", token)
+      .send({ query: TOP_LOCATION_QUERY });
+
+    expect(res.status).toBe(200);
+    expect(res.body.errors).toBeUndefined();
+    expect(res.body.data.topLocationByCurrentMonth).toMatchObject({
+      locationId: 2,
+      locationName: "Blue Creek",
+      totalCatchCount: 14,
+      month: 5,
+    });
+  });
+
+  it("returns null when no historical data exists for this month", async () => {
+    jest
+      .spyOn(reportsRepo, "getTopLocationByCurrentMonth")
+      .mockResolvedValueOnce(undefined);
+
+    const res = await request(app)
+      .post("/graphql")
+      .set("x-access-token", token)
+      .send({ query: TOP_LOCATION_QUERY });
+
+    expect(res.status).toBe(200);
+    expect(res.body.errors).toBeUndefined();
+    expect(res.body.data.topLocationByCurrentMonth).toBeNull();
+  });
+
+  it("passes the current user ID to the repository", async () => {
+    const spy = jest
+      .spyOn(reportsRepo, "getTopLocationByCurrentMonth")
+      .mockResolvedValueOnce(undefined);
+
+    await request(app)
+      .post("/graphql")
+      .set("x-access-token", token)
+      .send({ query: TOP_LOCATION_QUERY });
+
+    expect(spy).toHaveBeenCalledWith(USER_ID);
+  });
+});
+
 describe("allReports query", () => {
   it("returns an array of reports for an authenticated user", async () => {
     jest

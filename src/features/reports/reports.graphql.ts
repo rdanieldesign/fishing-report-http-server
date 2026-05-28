@@ -5,6 +5,8 @@ import {
   getImagesByReportId,
   getReportByIdGQL,
   getReportsGQL,
+  getTopLocationByCurrentMonth,
+  type TopLocationByMonth,
 } from "./reports.repository";
 
 export const UserType = builder.drizzleObject("users", {
@@ -115,6 +117,32 @@ builder.queryField("allReports", (t) =>
     },
     resolve: async (query, root, args, ctx) => {
       return getReportsGQL(query, args, parseInt(ctx.currentUserId as string));
+    },
+  }),
+);
+
+const TopLocationByMonthType =
+  builder.objectRef<TopLocationByMonth>("TopLocationByMonth");
+TopLocationByMonthType.implement({
+  fields: (t) => ({
+    locationId: t.exposeInt("locationId"),
+    locationName: t.exposeString("locationName"),
+    locationGoogleMapsLink: t.exposeString("locationGoogleMapsLink"),
+    totalCatchCount: t.exposeInt("totalCatchCount"),
+    month: t.exposeInt("month"),
+  }),
+});
+
+builder.queryField("topLocationByCurrentMonth", (t) =>
+  t.field({
+    type: TopLocationByMonthType,
+    nullable: true,
+    resolve: async (_root, _args, ctx) => {
+      return (
+        (await getTopLocationByCurrentMonth(
+          parseInt(ctx.currentUserId as string),
+        )) ?? null
+      );
     },
   }),
 );
