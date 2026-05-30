@@ -61,6 +61,22 @@ describe("POST /api/locations", () => {
 
     expect(res.status).toBe(200);
   });
+
+  it("passes usgsLocationId to the repository when provided", async () => {
+    const spy = jest
+      .spyOn(locationsRepo, "addLocation")
+      .mockResolvedValueOnce(1);
+
+    await request(app).post("/api/locations").send({
+      name: "New Lake",
+      googleMapsLink: "https://maps.example.com",
+      usgsLocationId: "01234567",
+    });
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ usgsLocationId: "01234567" }),
+    );
+  });
 });
 
 describe("PUT /api/locations/:id", () => {
@@ -75,6 +91,21 @@ describe("PUT /api/locations/:id", () => {
     });
 
     expect(res.status).toBe(200);
+  });
+
+  it("passes usgsLocationId to the repository when provided", async () => {
+    const spy = jest
+      .spyOn(locationsRepo, "updateLocation")
+      .mockResolvedValueOnce(undefined);
+
+    await request(app)
+      .put("/api/locations/1")
+      .send({ usgsLocationId: "01234567" });
+
+    expect(spy).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ usgsLocationId: "01234567" }),
+    );
   });
 });
 
