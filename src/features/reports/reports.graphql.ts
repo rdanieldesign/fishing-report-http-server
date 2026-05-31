@@ -5,6 +5,7 @@ import {
   getImagesByReportId,
   getReportByIdGQL,
   getReportsGQL,
+  getPaginatedReportsGQL,
   getTopLocationByCurrentMonth,
   type TopLocationByMonth,
 } from "./reports.repository";
@@ -117,6 +118,91 @@ builder.queryField("allReports", (t) =>
     },
     resolve: async (query, root, args, ctx) => {
       return getReportsGQL(query, args, parseInt(ctx.currentUserId as string));
+    },
+  }),
+);
+
+type PaginatedResult = Awaited<ReturnType<typeof getPaginatedReportsGQL>>;
+type PaginatedReportRow = PaginatedResult["reports"][number];
+
+const ReportListAuthorType = builder.objectRef<{
+  id: number;
+  name: string;
+}>("ReportListAuthor");
+ReportListAuthorType.implement({
+  fields: (t) => ({
+    id: t.exposeInt("id"),
+    name: t.exposeString("name"),
+  }),
+});
+
+const ReportListLocationType = builder.objectRef<{
+  id: number;
+  name: string;
+  googleMapsLink: string;
+  usgsLocationId: string | null;
+}>("ReportListLocation");
+ReportListLocationType.implement({
+  fields: (t) => ({
+    id: t.exposeInt("id"),
+    name: t.exposeString("name"),
+    googleMapsLink: t.exposeString("googleMapsLink"),
+    usgsLocationId: t.exposeString("usgsLocationId", { nullable: true }),
+  }),
+});
+
+const PaginatedReportItemType = builder.objectRef<PaginatedReportRow>(
+  "PaginatedReportItem",
+);
+PaginatedReportItemType.implement({
+  fields: (t) => ({
+    id: t.exposeInt("id"),
+    date: t.exposeString("date"),
+    catchCount: t.exposeInt("catchCount"),
+    notes: t.exposeString("notes"),
+    author: t.field({ type: ReportListAuthorType, resolve: (r) => r.author }),
+    location: t.field({
+      type: ReportListLocationType,
+      resolve: (r) => r.location,
+    }),
+    // TODO: replace with a DataLoader to batch getFirstImageKeysByReportIds across all reports in a request (avoids N+1)
+    thumbnailUrl: t.field({
+      type: "String",
+      nullable: true,
+      resolve: async (report) => {
+        const keyMap = await getFirstImageKeysByReportIds([report.id]);
+        const key = keyMap.get(report.id);
+        return key ? getSignedImageUrl(key) : null;
+      },
+    }),
+  }),
+});
+
+const ReportPageType = builder.objectRef<PaginatedResult>("ReportPage");
+ReportPageType.implement({
+  fields: (t) => ({
+    reports: t.field({
+      type: [PaginatedReportItemType],
+      resolve: (page) => page.reports,
+    }),
+    nextCursor: t.exposeString("nextCursor", { nullable: true }),
+  }),
+});
+
+builder.queryField("paginatedReports", (t) =>
+  t.field({
+    type: ReportPageType,
+    args: {
+      cursor: t.arg.string({ required: false }),
+      limit: t.arg.int({ required: false }),
+      locationId: t.arg.int({ required: false }),
+      authorId: t.arg.int({ required: false }),
+    },
+    resolve: async (_root, args, ctx) => {
+      return getPaginatedReportsGQL(
+        args,
+        parseInt(ctx.currentUserId as string),
+      );
     },
   }),
 );

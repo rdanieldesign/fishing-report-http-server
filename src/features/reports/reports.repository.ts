@@ -1,4 +1,4 @@
-import { and, eq, exists, inArray, isNotNull, or, sql } from "drizzle-orm";
+import { and, eq, exists, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
 import type { Column, InferSelectModel } from "drizzle-orm";
 import { db } from "../../db";
 import {
@@ -131,6 +131,67 @@ export function getReportsGQL(
       orderBy: (fields, { desc: d }) => [d(fields.date)],
     }),
   );
+}
+
+type CursorData = { date: string; id: number };
+
+function encodeCursor(date: string, id: number): string {
+  return Buffer.from(JSON.stringify({ date, id })).toString("base64");
+}
+
+function decodeCursor(cursor: string): CursorData {
+  return JSON.parse(
+    Buffer.from(cursor, "base64").toString("utf-8"),
+  ) as CursorData;
+}
+
+export async function getPaginatedReportsGQL(
+  params: {
+    authorId?: number | null;
+    locationId?: number | null;
+    cursor?: string | null;
+    limit?: number | null;
+  },
+  currentUserId: number,
+) {
+  const pageSize = Math.min(params.limit ?? 20, 50);
+  const cursorData = params.cursor ? decodeCursor(params.cursor) : null;
+
+  const rows = await db.query.reports.findMany({
+    where: {
+      ...(params.authorId != null ? { authorId: params.authorId } : {}),
+      ...(params.locationId != null ? { locationId: params.locationId } : {}),
+      ...(cursorData
+        ? {
+            RAW: (table) =>
+              or(
+                lt(table.date, cursorData.date),
+                and(
+                  eq(table.date, cursorData.date),
+                  lt(table.id, cursorData.id),
+                ),
+              )!,
+          }
+        : {}),
+      OR: [
+        { authorId: currentUserId },
+        {
+          RAW: (table) => friendVisibilityExists(currentUserId, table.authorId),
+        },
+      ],
+    },
+    with: { author: true, location: true },
+    orderBy: (fields, { desc: d }) => [d(fields.date), d(fields.id)],
+    limit: pageSize + 1,
+  });
+
+  const hasNextPage = rows.length > pageSize;
+  const items = hasNextPage ? rows.slice(0, pageSize) : rows;
+  const lastItem = items.at(-1);
+  const nextCursor =
+    hasNextPage && lastItem ? encodeCursor(lastItem.date, lastItem.id) : null;
+
+  return { reports: items, nextCursor };
 }
 
 export function getReportByIdForOwnership(
