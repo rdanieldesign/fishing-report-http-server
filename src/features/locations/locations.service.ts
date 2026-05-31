@@ -1,3 +1,4 @@
+import { hasReportsByLocation } from "../reports/reports.repository";
 import {
   addLocation as addLocationRepo,
   deleteLocation as deleteLocationRepo,
@@ -21,8 +22,16 @@ export function addLocation(newLocation: NewLocation): Promise<number> {
   return addLocationRepo({ name, googleMapsLink, usgsLocationId });
 }
 
-export function deleteLocation(locationId: string): Promise<void> {
-  return deleteLocationRepo(parseInt(locationId));
+export async function deleteLocation(locationId: string): Promise<void> {
+  const id = parseInt(locationId);
+  const hasReports = await hasReportsByLocation(id);
+  if (hasReports) {
+    throw {
+      status: 409,
+      message: "Cannot delete a location with associated reports",
+    };
+  }
+  return deleteLocationRepo(id);
 }
 
 export function updateLocation(
