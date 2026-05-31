@@ -162,6 +162,15 @@ export function updateReport(
     .then(() => undefined);
 }
 
+export function hasReportsByLocation(locationId: number): Promise<boolean> {
+  return db
+    .select({ n: sql`1` })
+    .from(reports)
+    .where(eq(reports.locationId, locationId))
+    .limit(1)
+    .then((rows) => rows.length > 0);
+}
+
 export function deleteReport(reportId: number): Promise<void> {
   return db
     .delete(reports)

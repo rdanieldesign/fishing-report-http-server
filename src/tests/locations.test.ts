@@ -1,8 +1,10 @@
 import request from "supertest";
 import { app } from "../app";
 import * as locationsRepo from "../features/locations/locations.repository";
+import * as reportsRepo from "../features/reports/reports.repository";
 
 jest.mock("../features/locations/locations.repository");
+jest.mock("../features/reports/reports.repository");
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -110,7 +112,10 @@ describe("PUT /api/locations/:id", () => {
 });
 
 describe("DELETE /api/locations/:id", () => {
-  it("returns 200", async () => {
+  it("returns 200 when no reports are associated", async () => {
+    jest
+      .spyOn(reportsRepo, "hasReportsByLocation")
+      .mockResolvedValueOnce(false);
     jest
       .spyOn(locationsRepo, "deleteLocation")
       .mockResolvedValueOnce(undefined);
@@ -118,5 +123,14 @@ describe("DELETE /api/locations/:id", () => {
     const res = await request(app).delete("/api/locations/1");
 
     expect(res.status).toBe(200);
+  });
+
+  it("returns 409 when reports are associated with the location", async () => {
+    jest.spyOn(reportsRepo, "hasReportsByLocation").mockResolvedValueOnce(true);
+
+    const res = await request(app).delete("/api/locations/1");
+
+    expect(res.status).toBe(409);
+    expect(locationsRepo.deleteLocation).not.toHaveBeenCalled();
   });
 });
