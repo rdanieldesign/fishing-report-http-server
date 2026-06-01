@@ -1,4 +1,5 @@
 import {
+  customType,
   int,
   mysqlEnum,
   mysqlTable,
@@ -8,6 +9,23 @@ import {
   date,
   decimal,
 } from "drizzle-orm/mysql-core";
+
+export type Coordinates = { latitude: number; longitude: number };
+
+// MySQL returns POINT columns as its internal geometry format:
+// bytes 0-3: SRID (uint32 LE), byte 4: byte order, bytes 5-8: geometry type,
+// bytes 9-16: X=longitude (double LE), bytes 17-24: Y=latitude (double LE)
+const point = customType<{
+  data: Coordinates;
+  driverData: { x: number; y: number };
+}>({
+  dataType() {
+    return "POINT SRID 4326";
+  },
+  fromDriver(value: { x: number; y: number }): Coordinates {
+    return { longitude: value.x, latitude: value.y };
+  },
+});
 
 export const users = mysqlTable("users", {
   id: int("id").primaryKey().autoincrement(),
@@ -19,8 +37,8 @@ export const users = mysqlTable("users", {
 export const locations = mysqlTable("locations", {
   id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
-  googleMapsLink: varchar("googleMapsLink", { length: 500 }).notNull(),
   usgsLocationId: varchar("usgs_location_id", { length: 50 }),
+  coordinates: point("coordinates"),
 });
 
 export const reports = mysqlTable("reports", {
@@ -34,7 +52,7 @@ export const reports = mysqlTable("reports", {
 
 export const reportImages = mysqlTable("report_images", {
   id: int("id").primaryKey().autoincrement(),
-  reportId: int("reportId")
+  reportId: int("reportId", { unsigned: true })
     .notNull()
     .references(() => reports.id, { onDelete: "cascade" }),
   imageKey: varchar("imageKey", { length: 500 }),

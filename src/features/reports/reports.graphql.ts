@@ -23,7 +23,6 @@ export const LocationType = builder.drizzleObject("locations", {
   fields: (t) => ({
     id: t.exposeInt("id"),
     name: t.exposeString("name"),
-    googleMapsLink: t.exposeString("googleMapsLink"),
     usgsLocationId: t.exposeString("usgsLocationId", { nullable: true }),
   }),
 });
@@ -139,14 +138,12 @@ ReportListAuthorType.implement({
 const ReportListLocationType = builder.objectRef<{
   id: number;
   name: string;
-  googleMapsLink: string;
   usgsLocationId: string | null;
 }>("ReportListLocation");
 ReportListLocationType.implement({
   fields: (t) => ({
     id: t.exposeInt("id"),
     name: t.exposeString("name"),
-    googleMapsLink: t.exposeString("googleMapsLink"),
     usgsLocationId: t.exposeString("usgsLocationId", { nullable: true }),
   }),
 });
@@ -213,7 +210,6 @@ TopLocationByMonthType.implement({
   fields: (t) => ({
     locationId: t.exposeInt("locationId"),
     locationName: t.exposeString("locationName"),
-    locationGoogleMapsLink: t.exposeString("locationGoogleMapsLink"),
     totalCatchCount: t.exposeInt("totalCatchCount"),
     month: t.exposeInt("month"),
   }),

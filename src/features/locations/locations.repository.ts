@@ -1,10 +1,23 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { db } from "../../db";
-import { locations } from "../../db/schema";
+import { type Coordinates, locations } from "../../db/schema";
+
+// Produces a ST_PointFromText expression for SRID 4326 inserts/updates.
+// POINT WKT uses (longitude latitude) order per the geographic standard.
+function toPointSQL(coords: Coordinates) {
+  return sql`ST_PointFromText(${`POINT(${coords.longitude} ${coords.latitude})`}, 4326)`;
+}
 
 export type Location = InferSelectModel<typeof locations>;
-export type NewLocation = Omit<InferInsertModel<typeof locations>, "id">;
+// TODO: Once all existing locations have coordinates backfilled, make the DB
+// column NOT NULL, remove this override, and restore the simpler Omit<..., "id">.
+export type NewLocation = Omit<
+  InferInsertModel<typeof locations>,
+  "id" | "coordinates"
+> & {
+  coordinates: Coordinates;
+};
 
 export function getLocations(): Promise<Location[]> {
   return db.select().from(locations).orderBy(asc(locations.name));
@@ -20,9 +33,13 @@ export function getLocation(locationId: number): Promise<Location | undefined> {
 }
 
 export function addLocation(newLocation: NewLocation): Promise<number> {
+  const { coordinates, ...rest } = newLocation;
   return db
     .insert(locations)
-    .values(newLocation)
+    .values({
+      ...rest,
+      coordinates: toPointSQL(coordinates) as unknown as Coordinates,
+    })
     .then((result) => result[0].insertId);
 }
 
@@ -30,9 +47,16 @@ export function updateLocation(
   locationId: number,
   update: Partial<NewLocation>,
 ): Promise<void> {
+  const { coordinates, ...rest } = update;
+  const set = coordinates
+    ? {
+        ...rest,
+        coordinates: toPointSQL(coordinates) as unknown as Coordinates,
+      }
+    : rest;
   return db
     .update(locations)
-    .set(update)
+    .set(set)
     .where(eq(locations.id, locationId))
     .then(() => undefined);
 }

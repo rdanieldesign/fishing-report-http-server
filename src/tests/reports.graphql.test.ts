@@ -52,8 +52,8 @@ const MOCK_DB_REPORT = {
   location: {
     id: 1,
     name: "Blue Creek",
-    googleMapsLink: "https://maps.google.com/?q=blue-creek",
     usgsLocationId: null,
+    coordinates: { latitude: 40.7128, longitude: -74.006 },
   },
 };
 
@@ -89,7 +89,6 @@ const TOP_LOCATION_QUERY = `
     topLocationByCurrentMonth {
       locationId
       locationName
-      locationGoogleMapsLink
       totalCatchCount
       month
     }
@@ -103,7 +102,6 @@ describe("topLocationByCurrentMonth query", () => {
       .mockResolvedValueOnce({
         locationId: 2,
         locationName: "Blue Creek",
-        locationGoogleMapsLink: "https://maps.google.com/?q=blue-creek",
         totalCatchCount: 14,
         month: 5,
       });

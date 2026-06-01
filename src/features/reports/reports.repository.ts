@@ -275,7 +275,6 @@ export async function getFirstImageKeysByReportIds(
 export type TopLocationByMonth = {
   locationId: number;
   locationName: string;
-  locationGoogleMapsLink: string;
   totalCatchCount: number;
   month: number;
 };
@@ -287,7 +286,6 @@ export async function getTopLocationByCurrentMonth(
     .select({
       locationId: locations.id,
       locationName: locations.name,
-      locationGoogleMapsLink: locations.googleMapsLink,
       totalCatchCount: sql<number>`SUM(${reports.catchCount})`,
     })
     .from(reports)
@@ -302,7 +300,7 @@ export async function getTopLocationByCurrentMonth(
         ),
       ),
     )
-    .groupBy(locations.id, locations.name, locations.googleMapsLink)
+    .groupBy(locations.id, locations.name)
     .orderBy(sql`SUM(${reports.catchCount}) DESC`)
     .limit(1);
 

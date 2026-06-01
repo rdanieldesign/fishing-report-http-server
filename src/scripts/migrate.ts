@@ -1,6 +1,7 @@
 // TODO: Remove this script and restore "drizzle-kit migrate" once drizzle-kit
 // exits beta. It exists because drizzle-kit beta sends multi-statement migration
 // files as a single query, which mysql2 rejects without multipleStatements:true.
+import "dotenv/config";
 import { drizzle } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 import mysql from "mysql2/promise";

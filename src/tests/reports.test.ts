@@ -26,7 +26,6 @@ describe("POST /api/reports", () => {
     jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce({
       id: 1,
       name: "Test Lake",
-      googleMapsLink: "https://maps.example.com",
       usgsLocationId: null,
     } as any);
 
@@ -179,8 +178,8 @@ describe("addReport service with async USGS queue", () => {
     jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce({
       id: 1,
       name: "Test Lake",
-      googleMapsLink: "https://maps.example.com",
       usgsLocationId: "usgs-12345",
+      coordinates: { latitude: 40.7128, longitude: -74.006 },
     });
 
     await reportsService.addReport({
@@ -204,8 +203,8 @@ describe("addReport service with async USGS queue", () => {
     jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce({
       id: 2,
       name: "Unknown Lake",
-      googleMapsLink: "https://maps.example.com",
       usgsLocationId: null,
+      coordinates: { latitude: 40.7128, longitude: -74.006 },
     });
 
     await reportsService.addReport({

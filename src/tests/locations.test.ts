@@ -16,8 +16,8 @@ describe("GET /api/locations", () => {
       {
         id: 1,
         name: "Avondale Lake",
-        googleMapsLink: "https://maps.example.com",
         usgsLocationId: null,
+        coordinates: { latitude: 40.7128, longitude: -74.006 },
       },
     ]);
 
@@ -33,8 +33,8 @@ describe("GET /api/locations/:id", () => {
     jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce({
       id: 1,
       name: "Avondale Lake",
-      googleMapsLink: "https://maps.example.com",
       usgsLocationId: null,
+      coordinates: { latitude: 40.7128, longitude: -74.006 },
     });
 
     const res = await request(app).get("/api/locations/1");
@@ -59,7 +59,6 @@ describe("POST /api/locations", () => {
 
     const res = await request(app)
       .post("/api/locations")
-      .send({ name: "New Lake", googleMapsLink: "https://maps.example.com" });
 
     expect(res.status).toBe(200);
   });
@@ -71,7 +70,6 @@ describe("POST /api/locations", () => {
 
     await request(app).post("/api/locations").send({
       name: "New Lake",
-      googleMapsLink: "https://maps.example.com",
       usgsLocationId: "01234567",
     });
 
@@ -89,7 +87,6 @@ describe("PUT /api/locations/:id", () => {
 
     const res = await request(app).put("/api/locations/1").send({
       name: "Updated Lake",
-      googleMapsLink: "https://maps.example.com",
     });
 
     expect(res.status).toBe(200);

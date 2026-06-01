@@ -18,8 +18,8 @@ export function getLocation(locationId: string): Promise<Location | null> {
 }
 
 export function addLocation(newLocation: NewLocation): Promise<number> {
-  const { name, googleMapsLink, usgsLocationId } = newLocation;
-  return addLocationRepo({ name, googleMapsLink, usgsLocationId });
+  const { name, usgsLocationId, coordinates } = newLocation;
+  return addLocationRepo({ name, usgsLocationId, coordinates });
 }
 
 export async function deleteLocation(locationId: string): Promise<void> {
@@ -38,10 +38,10 @@ export function updateLocation(
   locationId: string,
   update: Partial<NewLocation>,
 ): Promise<void> {
-  const { name, googleMapsLink, usgsLocationId } = update;
+  const { name, usgsLocationId, coordinates } = update;
   return updateLocationRepo(parseInt(locationId), {
     name,
-    googleMapsLink,
     usgsLocationId,
+    coordinates,
   });
 }
