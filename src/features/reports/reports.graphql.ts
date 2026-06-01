@@ -9,6 +9,7 @@ import {
   getTopLocationByCurrentMonth,
   type TopLocationByMonth,
 } from "./reports.repository";
+import { getWeatherForDateRange } from "../weather/weather.repository";
 
 export const UserType = builder.drizzleObject("users", {
   name: "User",
@@ -36,6 +37,22 @@ export const UsgsReadingType = builder.drizzleObject("usgsReadings", {
     parameterName: t.exposeString("parameterName"),
     value: t.exposeString("value"),
     unit: t.exposeString("unit"),
+  }),
+});
+
+export const WeatherDailyType = builder.drizzleObject("weatherDaily", {
+  name: "WeatherDaily",
+  fields: (t) => ({
+    date: t.exposeString("date"),
+    tempMax: t.exposeString("tempMax", { nullable: true }),
+    tempMin: t.exposeString("tempMin", { nullable: true }),
+    tempMean: t.exposeString("tempMean", { nullable: true }),
+    precipitationSum: t.exposeString("precipitationSum", { nullable: true }),
+    weatherCode: t.exposeInt("weatherCode", { nullable: true }),
+    windSpeedMax: t.exposeString("windSpeedMax", { nullable: true }),
+    cloudCoverMin: t.exposeString("cloudCoverMin", { nullable: true }),
+    cloudCoverMax: t.exposeString("cloudCoverMax", { nullable: true }),
+    cloudCoverMean: t.exposeString("cloudCoverMean", { nullable: true }),
   }),
 });
 
@@ -87,6 +104,21 @@ export const ReportDetailType = builder.drizzleObject("reports", {
     author: t.relation("author"),
     location: t.relation("location"),
     usgsReadings: t.relation("usgsReadings"),
+    recentWeather: t.field({
+      type: [WeatherDailyType],
+      nullable: true,
+      select: { columns: { locationId: true, date: true } },
+      resolve: async (report) => {
+        const d = new Date(`${report.date}T12:00:00Z`);
+        d.setUTCDate(d.getUTCDate() - 4);
+        const startDate = d.toISOString().slice(0, 10);
+        return getWeatherForDateRange(
+          report.locationId,
+          startDate,
+          report.date,
+        );
+      },
+    }),
     images: t.field({
       type: [ReportImageType],
       nullable: true,

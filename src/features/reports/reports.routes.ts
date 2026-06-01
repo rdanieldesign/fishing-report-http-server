@@ -6,6 +6,7 @@ import {
   addReport,
   deleteReport,
   enqueueUsgsForReport,
+  enqueueWeatherForReport,
   updateReport,
 } from "./reports.service";
 import { updateReportImage } from "./reports.repository";
@@ -41,6 +42,17 @@ reportsRouter.post(
         req.body.reportDate,
         req.authenticatedUserId,
       ),
+      res,
+    );
+  },
+);
+
+reportsRouter.post(
+  "/:reportId/weather",
+  [authenticate],
+  (req: Request, res: Response) => {
+    handleResponse(
+      enqueueWeatherForReport(req.params.reportId, req.authenticatedUserId),
       res,
     );
   },

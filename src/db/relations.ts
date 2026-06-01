@@ -9,6 +9,13 @@ export const allRelations = defineRelations(schema, (r) => ({
   },
   locations: {
     reports: r.many.reports(),
+    weatherDaily: r.many.weatherDaily(),
+  },
+  weatherDaily: {
+    location: r.one.locations({
+      from: r.weatherDaily.locationId,
+      to: r.locations.id,
+    }),
   },
   reports: {
     author: r.one.users({

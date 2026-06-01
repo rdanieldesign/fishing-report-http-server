@@ -8,6 +8,7 @@ import {
   varchar,
   date,
   decimal,
+  unique,
 } from "drizzle-orm/mysql-core";
 
 export type Coordinates = { latitude: number; longitude: number };
@@ -83,6 +84,27 @@ export const usgsReadings = mysqlTable("usgs_readings", {
   unit: varchar("unit", { length: 20 }).notNull(),
 });
 
+export const weatherDaily = mysqlTable(
+  "weather_daily",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    locationId: int("location_id", { unsigned: true })
+      .notNull()
+      .references(() => locations.id, { onDelete: "cascade" }),
+    date: date("date", { mode: "string" }).notNull(),
+    tempMax: decimal("temp_max", { precision: 5, scale: 2 }),
+    tempMin: decimal("temp_min", { precision: 5, scale: 2 }),
+    tempMean: decimal("temp_mean", { precision: 5, scale: 2 }),
+    precipitationSum: decimal("precipitation_sum", { precision: 6, scale: 3 }),
+    weatherCode: int("weather_code"),
+    windSpeedMax: decimal("wind_speed_max", { precision: 6, scale: 2 }),
+    cloudCoverMin: decimal("cloud_cover_min", { precision: 5, scale: 2 }),
+    cloudCoverMax: decimal("cloud_cover_max", { precision: 5, scale: 2 }),
+    cloudCoverMean: decimal("cloud_cover_mean", { precision: 5, scale: 2 }),
+  },
+  (table) => [unique("location_date_unique").on(table.locationId, table.date)],
+);
+
 export const schema = {
   users,
   locations,
@@ -90,4 +112,5 @@ export const schema = {
   reportImages,
   friends,
   usgsReadings,
+  weatherDaily,
 };

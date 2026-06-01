@@ -20,7 +20,14 @@ import {
   type Report,
 } from "./reports.repository";
 import { usgsQueue } from "../../queue/usgs.queue";
+import { weatherQueue } from "../../queue/weather.queue";
 import { getLocation } from "../locations/locations.repository";
+
+function subtractDays(dateStr: string, days: number): string {
+  const d = new Date(`${dateStr}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
+}
 
 function sendUnauthorizedMessage(): Promise<never> {
   const error: IError = {
@@ -64,6 +71,15 @@ export async function addReport(
       postId: reportId,
       usgsLocationId: location.usgsLocationId,
       reportDate: newReport.date,
+    });
+  }
+
+  if (location?.coordinates) {
+    weatherQueue.add("fetch-weather", {
+      locationId: reportData.locationId,
+      coordinates: location.coordinates,
+      startDate: subtractDays(newReport.date, 4),
+      endDate: newReport.date,
     });
   }
 
@@ -148,6 +164,29 @@ export async function enqueueUsgsForReport(
     postId: reportIdNum,
     usgsLocationId,
     reportDate,
+  });
+}
+
+export async function enqueueWeatherForReport(
+  reportId: string,
+  userId: number | undefined,
+): Promise<void> {
+  if (!userId) return sendUnauthorizedMessage();
+
+  const reportIdNum = parseInt(reportId);
+  const existing = await getReportByIdForOwnership(reportIdNum);
+  if (!existing || !reportBelongsToUser(existing, userId)) {
+    return sendUnauthorizedMessage();
+  }
+
+  const location = await getLocation(existing.locationId);
+  if (!location?.coordinates) return;
+
+  weatherQueue.add("fetch-weather", {
+    locationId: existing.locationId,
+    coordinates: location.coordinates,
+    startDate: subtractDays(existing.date, 4),
+    endDate: existing.date,
   });
 }
 

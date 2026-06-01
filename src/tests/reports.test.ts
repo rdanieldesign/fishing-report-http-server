@@ -8,6 +8,7 @@ import { signTestToken } from "./helpers";
 jest.mock("../features/reports/reports.repository");
 jest.mock("../features/locations/locations.repository");
 jest.mock("../queue/usgs.queue");
+jest.mock("../queue/weather.queue");
 jest.mock("../services/image-service", () => ({
   getSignedImageUrl: async () => "https://mock-s3.example.com/image",
   deleteMultipleImages: jest.fn(),
@@ -232,5 +233,70 @@ describe("addReport service with async USGS queue", () => {
     });
 
     expect(usgsQueue.add).not.toHaveBeenCalled();
+  });
+});
+
+describe("addReport service with async weather queue", () => {
+  it("queues a weather fetch job when location has coordinates", async () => {
+    const { weatherQueue } = require("../queue/weather.queue");
+    jest.spyOn(reportsRepo, "addReport").mockResolvedValueOnce(50);
+    jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce({
+      id: 1,
+      name: "Test Lake",
+      usgsLocationId: null,
+      coordinates: { latitude: 40.7128, longitude: -74.006 },
+    });
+
+    await reportsService.addReport({
+      locationId: 1,
+      date: "2024-06-10",
+      catchCount: 3,
+      authorId: USER_ID,
+      notes: "Nice day",
+    });
+
+    expect(weatherQueue.add).toHaveBeenCalledWith("fetch-weather", {
+      locationId: 1,
+      coordinates: { latitude: 40.7128, longitude: -74.006 },
+      startDate: "2024-06-06",
+      endDate: "2024-06-10",
+    });
+  });
+
+  it("does not queue a weather fetch job when location has no coordinates", async () => {
+    const { weatherQueue } = require("../queue/weather.queue");
+    jest.spyOn(reportsRepo, "addReport").mockResolvedValueOnce(51);
+    jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce({
+      id: 2,
+      name: "Unknown Lake",
+      usgsLocationId: null,
+      coordinates: null,
+    });
+
+    await reportsService.addReport({
+      locationId: 2,
+      date: "2024-06-10",
+      catchCount: 2,
+      authorId: USER_ID,
+      notes: "Quiet day",
+    });
+
+    expect(weatherQueue.add).not.toHaveBeenCalled();
+  });
+
+  it("does not queue a weather fetch job when location is not found", async () => {
+    const { weatherQueue } = require("../queue/weather.queue");
+    jest.spyOn(reportsRepo, "addReport").mockResolvedValueOnce(52);
+    jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce(undefined);
+
+    await reportsService.addReport({
+      locationId: 999,
+      date: "2024-06-10",
+      catchCount: 1,
+      authorId: USER_ID,
+      notes: "Scouting",
+    });
+
+    expect(weatherQueue.add).not.toHaveBeenCalled();
   });
 });

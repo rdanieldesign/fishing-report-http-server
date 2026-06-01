@@ -4,14 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently 'tsc -w' 'npm run dev:main' 'npm run dev:worker' 'npm run tunnel'",
+    "dev": "concurrently 'tsc -w' 'npm run dev:main' 'npm run dev:worker' 'npm run dev:weather-worker' 'npm run tunnel'",
     "dev:containers": "docker compose -f docker-compose.dev.yml up",
     "dev:main": "nodemon dist/index.js",
     "dev:worker": "nodemon dist/workers/usgs.worker.js",
+    "dev:weather-worker": "nodemon dist/workers/weather.worker.js",
     "build": "tsc",
     "migrate": "node dist/scripts/migrate.js",
     "start": "tsc && node dist/index.js",
     "start:worker": "node dist/workers/usgs.worker.js",
+    "start:weather-worker": "node dist/workers/weather.worker.js",
     "test": "jest",
     "tunnel": "ngrok http --domain=$NGROK_DOMAIN 3000"
   },
@@ -40,6 +42,7 @@
     "jsonwebtoken": "^8.5.1",
     "multer": "^1.4.4-lts.1",
     "mysql2": "^3.20.0",
+    "openmeteo": "^1.2.3",
     "sharp": "^0.34.5",
     "uuid": "^8.3.2"
   },
