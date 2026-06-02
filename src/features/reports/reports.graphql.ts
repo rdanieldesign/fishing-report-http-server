@@ -9,7 +9,10 @@ import {
   getTopLocationByCurrentMonth,
   type TopLocationByMonth,
 } from "./reports.repository";
-import { getWeatherForDateRange } from "../weather/weather.repository";
+import {
+  getWeatherForDateRange,
+  type WeatherDaily,
+} from "../weather/weather.repository";
 
 export const UserType = builder.drizzleObject("users", {
   name: "User",
@@ -40,8 +43,10 @@ export const UsgsReadingType = builder.drizzleObject("usgsReadings", {
   }),
 });
 
-export const WeatherDailyType = builder.drizzleObject("weatherDaily", {
-  name: "WeatherDaily",
+const WeatherConditionsType = builder.objectRef<
+  WeatherDaily & { priorRainfall: number | null }
+>("WeatherConditions");
+WeatherConditionsType.implement({
   fields: (t) => ({
     date: t.exposeString("date"),
     tempMax: t.exposeString("tempMax", { nullable: true }),
@@ -53,6 +58,7 @@ export const WeatherDailyType = builder.drizzleObject("weatherDaily", {
     cloudCoverMin: t.exposeString("cloudCoverMin", { nullable: true }),
     cloudCoverMax: t.exposeString("cloudCoverMax", { nullable: true }),
     cloudCoverMean: t.exposeString("cloudCoverMean", { nullable: true }),
+    priorRainfall: t.exposeFloat("priorRainfall", { nullable: true }),
   }),
 });
 
@@ -104,19 +110,29 @@ export const ReportDetailType = builder.drizzleObject("reports", {
     author: t.relation("author"),
     location: t.relation("location"),
     usgsReadings: t.relation("usgsReadings"),
-    recentWeather: t.field({
-      type: [WeatherDailyType],
+    weatherConditions: t.field({
+      type: WeatherConditionsType,
       nullable: true,
       select: { columns: { locationId: true, date: true } },
       resolve: async (report) => {
         const d = new Date(`${report.date}T12:00:00Z`);
         d.setUTCDate(d.getUTCDate() - 4);
         const startDate = d.toISOString().slice(0, 10);
-        return getWeatherForDateRange(
+        const data = await getWeatherForDateRange(
           report.locationId,
           startDate,
           report.date,
         );
+        const tripDay = data.find((w) => w.date === report.date);
+        if (!tripDay) return null;
+        const priorRainfall = data
+          .filter((w) => w.date !== report.date)
+          .reduce(
+            (sum, w) =>
+              sum + (w.precipitationSum ? parseFloat(w.precipitationSum) : 0),
+            0,
+          );
+        return { ...tripDay, priorRainfall };
       },
     }),
     images: t.field({
