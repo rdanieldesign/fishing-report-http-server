@@ -4,9 +4,9 @@ import { db } from "../../db";
 import { type Coordinates, locations } from "../../db/schema";
 
 // Produces a ST_PointFromText expression for SRID 4326 inserts/updates.
-// POINT WKT uses (longitude latitude) order per the geographic standard.
+// POINT WKT uses (latitude longitude) order per the geographic standard.
 function toPointSQL(coords: Coordinates) {
-  return sql`ST_PointFromText(${`POINT(${coords.longitude} ${coords.latitude})`}, 4326)`;
+  return sql`ST_PointFromText(${`POINT(${coords.latitude} ${coords.longitude})`}, 4326)`;
 }
 
 export type Location = InferSelectModel<typeof locations>;
