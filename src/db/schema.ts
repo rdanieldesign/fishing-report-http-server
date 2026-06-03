@@ -24,7 +24,7 @@ const point = customType<{
     return "POINT SRID 4326";
   },
   fromDriver(value: { x: number; y: number }): Coordinates {
-    return { longitude: value.x, latitude: value.y };
+    return { latitude: value.x, longitude: value.y };
   },
 });
 
