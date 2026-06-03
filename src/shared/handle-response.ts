@@ -12,6 +12,7 @@ export function handleResponse<T>(
     .catch((err: IError) => {
       const status = err?.status ?? null;
       const message = err?.message ?? JSON.stringify(err);
+      if (!status || status >= 500) console.error(err);
       res.status(status || 500).json(message);
     });
 }
