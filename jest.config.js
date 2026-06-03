@@ -5,9 +5,9 @@ module.exports = {
   modulePathIgnorePatterns: ["<rootDir>/dist/"],
   setupFiles: ["./src/tests/setup.ts"],
   setupFilesAfterEnv: ["./src/tests/setup-after-env.ts"],
-  forceExit: true,
-  detectOpenHandles: false,
   moduleNameMapper: {
     ".*queue/usgs\\.queue.*": "<rootDir>/src/__mocks__/queue/usgs.queue.ts",
+    ".*queue/weather\\.queue.*":
+      "<rootDir>/src/__mocks__/queue/weather.queue.ts",
   },
 };
