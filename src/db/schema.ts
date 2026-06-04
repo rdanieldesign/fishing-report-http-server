@@ -13,9 +13,7 @@ import {
 
 export type Coordinates = { latitude: number; longitude: number };
 
-// MySQL returns POINT columns as its internal geometry format:
-// bytes 0-3: SRID (uint32 LE), byte 4: byte order, bytes 5-8: geometry type,
-// bytes 9-16: X=longitude (double LE), bytes 17-24: Y=latitude (double LE)
+// mysql2 returns POINT as { x, y } using Cartesian convention: x = longitude, y = latitude.
 const point = customType<{
   data: Coordinates;
   driverData: { x: number; y: number };
@@ -24,7 +22,7 @@ const point = customType<{
     return "POINT SRID 4326";
   },
   fromDriver(value: { x: number; y: number }): Coordinates {
-    return { latitude: value.x, longitude: value.y };
+    return { latitude: value.y, longitude: value.x };
   },
 });
 

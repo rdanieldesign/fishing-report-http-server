@@ -74,7 +74,7 @@ export async function getReportsWithMissingWeather(): Promise<
 > {
   const rows = await db.execute(sql`
     SELECT DISTINCT r.locationId AS locationId, r.date,
-      ST_X(l.coordinates) AS lat, ST_Y(l.coordinates) AS lng
+      ST_Latitude(l.coordinates) AS lat, ST_Longitude(l.coordinates) AS lng
     FROM reports r
     JOIN locations l ON l.id = r.locationId
     WHERE l.coordinates IS NOT NULL

@@ -3,10 +3,9 @@ import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { db } from "../../db";
 import { type Coordinates, locations } from "../../db/schema";
 
-// Use ST_GeomFromText to pass the optional 'axis-order' parameter
-// POINT WKT uses (longitude latitude) order per the geographic standard.
+// SRID 4326 defines latitude as its first axis, so WKT must be POINT(lat lon).
 function toPointSQL(coords: Coordinates) {
-  return sql`ST_PointFromText(${`POINT(${coords.longitude} ${coords.latitude})`}, 4326, 'axis-order=long-lat')`;
+  return sql`ST_PointFromText(${`POINT(${coords.latitude} ${coords.longitude})`}, 4326)`;
 }
 
 export type Location = InferSelectModel<typeof locations>;
