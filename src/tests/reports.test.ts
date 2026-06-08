@@ -129,6 +129,15 @@ describe("POST /api/reports/:id/usgs", () => {
     jest.spyOn(reportsRepo, "getReportByIdForOwnership").mockResolvedValueOnce({
       id: 1,
       authorId: USER_ID,
+      locationId: 5,
+      date: "2024-06-01",
+    } as any);
+    jest.spyOn(locationsRepo, "getLocation").mockResolvedValueOnce({
+      id: 5,
+      name: "Test Lake",
+      usgsLocationId: "usgs-12345",
+      coordinates: null,
+      timezone: "America/New_York",
     } as any);
 
     const res = await request(app)
@@ -138,9 +147,10 @@ describe("POST /api/reports/:id/usgs", () => {
 
     expect(res.status).toBe(200);
     expect(usgsQueue.add).toHaveBeenCalledWith("fetch-usgs", {
-      postId: 1,
+      locationId: 5,
       usgsLocationId: "usgs-12345",
-      reportDate: "2024-06-01",
+      date: "2024-06-01",
+      timezone: "America/New_York",
     });
   });
 
@@ -181,7 +191,7 @@ describe("addReport service with async USGS queue", () => {
       name: "Test Lake",
       usgsLocationId: "usgs-12345",
       coordinates: { latitude: 40.7128, longitude: -74.006 },
-      timezone: null,
+      timezone: "America/New_York",
     });
 
     await reportsService.addReport({
@@ -193,9 +203,10 @@ describe("addReport service with async USGS queue", () => {
     });
 
     expect(usgsQueue.add).toHaveBeenCalledWith("fetch-usgs", {
-      postId: 42,
+      locationId: 1,
       usgsLocationId: "usgs-12345",
-      reportDate: "2024-06-01",
+      date: "2024-06-01",
+      timezone: "America/New_York",
     });
   });
 
