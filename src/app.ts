@@ -5,6 +5,7 @@ import { friendsRouter } from "./features/friends/friends.routes";
 import { locationsRouter } from "./features/locations/locations.routes";
 import { reportsRouter } from "./features/reports/reports.routes";
 import { weatherRouter } from "./features/weather/weather.routes";
+import { usgsRouter } from "./features/usgs/usgs.routes";
 import { usersRouter } from "./features/users/users.routes";
 
 import { ApolloServer } from "@apollo/server";
@@ -35,6 +36,7 @@ app.use(express.json());
 app.use("/api/locations", locationsRouter);
 app.use("/api/reports", reportsRouter);
 app.use("/api/weather", weatherRouter);
+app.use("/api/usgs", usgsRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/friends", friendsRouter);
 app.use("/api/auth", authRouter);

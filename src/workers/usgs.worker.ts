@@ -2,20 +2,21 @@ import "dotenv/config";
 import { Worker } from "bullmq";
 import { REDIS_HOST, REDIS_PORT } from "../config";
 import { fetchUsgsReadings } from "../features/usgs/usgs.service";
-import { insertUsgsReadings } from "../features/usgs/usgs.repository";
+import { upsertUsgsReadings } from "../features/usgs/usgs.repository";
 
 export interface UsgsJobData {
-  postId: number;
+  locationId: number;
   usgsLocationId: string;
-  reportDate: string;
+  date: string;
+  timezone: string;
 }
 
 const worker = new Worker<UsgsJobData>(
   "usgs",
   async (job) => {
-    const { postId, usgsLocationId, reportDate } = job.data;
-    const readings = await fetchUsgsReadings(usgsLocationId, reportDate);
-    await insertUsgsReadings(postId, readings);
+    const { locationId, usgsLocationId, date, timezone } = job.data;
+    const readings = await fetchUsgsReadings(usgsLocationId, date, timezone);
+    await upsertUsgsReadings(locationId, readings);
   },
   { connection: { host: REDIS_HOST, port: REDIS_PORT } },
 );

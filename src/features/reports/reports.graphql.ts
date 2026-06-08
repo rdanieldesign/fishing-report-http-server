@@ -13,6 +13,9 @@ import {
   getWeatherForDateRange,
   type WeatherDaily,
 } from "../weather/weather.repository";
+import { getLocation } from "../locations/locations.repository";
+import { getUsgsReadingsForDate } from "../usgs/usgs.repository";
+import { localHourToUTC } from "../usgs/usgs.service";
 
 export const UserType = builder.drizzleObject("users", {
   name: "User",
@@ -28,13 +31,19 @@ export const LocationType = builder.drizzleObject("locations", {
     id: t.exposeInt("id"),
     name: t.exposeString("name"),
     usgsLocationId: t.exposeString("usgsLocationId", { nullable: true }),
+    timezone: t.exposeString("timezone", { nullable: true }),
   }),
 });
 
 export const UsgsReadingType = builder.drizzleObject("usgsReadings", {
   name: "UsgsReading",
   fields: (t) => ({
-    id: t.exposeString("id"),
+    recordedAt: t.field({
+      type: "String",
+      select: { columns: { recordedAt: true } },
+      resolve: (r) => r.recordedAt.toISOString(),
+    }),
+    timeSlot: t.exposeString("timeSlot"),
     parameterCode: t.exposeString("parameterCode"),
     computationIdentifier: t.exposeString("computationIdentifier"),
     parameterName: t.exposeString("parameterName"),
@@ -109,7 +118,17 @@ export const ReportDetailType = builder.drizzleObject("reports", {
     notes: t.exposeString("notes"),
     author: t.relation("author"),
     location: t.relation("location"),
-    usgsReadings: t.relation("usgsReadings"),
+    usgsReadings: t.field({
+      type: [UsgsReadingType],
+      select: { columns: { locationId: true, date: true } },
+      resolve: async (report) => {
+        const location = await getLocation(report.locationId);
+        if (!location?.timezone) return [];
+        const startUTC = localHourToUTC(report.date, 0, location.timezone);
+        const endUTC = new Date(startUTC.getTime() + 24 * 60 * 60 * 1000);
+        return getUsgsReadingsForDate(report.locationId, startUTC, endUTC);
+      },
+    }),
     weatherConditions: t.field({
       type: WeatherConditionsType,
       nullable: true,

@@ -36,12 +36,7 @@ reportsRouter.post(
   [authenticate],
   (req: Request, res: Response) => {
     handleResponse(
-      enqueueUsgsForReport(
-        req.params.reportId,
-        req.body.usgsLocationId,
-        req.body.reportDate,
-        req.authenticatedUserId,
-      ),
+      enqueueUsgsForReport(req.params.reportId, req.authenticatedUserId),
       res,
     );
   },

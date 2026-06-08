@@ -1,15 +1,8 @@
 import { and, eq, exists, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
 import type { Column, InferSelectModel } from "drizzle-orm";
 import { db } from "../../db";
-import {
-  friends,
-  locations,
-  reportImages,
-  reports,
-  usgsReadings,
-} from "../../db/schema";
+import { friends, locations, reportImages, reports } from "../../db/schema";
 import { FriendStatus } from "../../enums/friend-enum";
-import type { UsgsReading } from "../usgs/usgs.service";
 
 export type Report = InferSelectModel<typeof reports>;
 
@@ -59,24 +52,6 @@ function friendVisibilityExists(currentUserId: number, authorIdCol: Column) {
         ),
       ),
   );
-}
-
-export async function getUsgsReadingsForReport(
-  reportId: number,
-): Promise<UsgsReading[]> {
-  const rows = await db
-    .select({
-      id: usgsReadings.id,
-      parameterCode: usgsReadings.parameterCode,
-      computationIdentifier: usgsReadings.computationIdentifier,
-      parameterName: usgsReadings.parameterName,
-      value: usgsReadings.value,
-      unit: usgsReadings.unit,
-    })
-    .from(usgsReadings)
-    .where(eq(usgsReadings.postId, reportId));
-
-  return rows as UsgsReading[];
 }
 
 type FindFirstConfig = NonNullable<

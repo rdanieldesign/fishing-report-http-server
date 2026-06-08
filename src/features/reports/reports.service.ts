@@ -66,11 +66,12 @@ export async function addReport(
     getLocation(reportData.locationId),
   ]);
 
-  if (location?.usgsLocationId) {
+  if (location?.usgsLocationId && location.timezone) {
     usgsQueue.add("fetch-usgs", {
-      postId: reportId,
+      locationId: reportData.locationId,
       usgsLocationId: location.usgsLocationId,
-      reportDate: newReport.date,
+      date: newReport.date,
+      timezone: location.timezone,
     });
   }
 
@@ -148,8 +149,6 @@ export async function updateReport(
 
 export async function enqueueUsgsForReport(
   reportId: string,
-  usgsLocationId: string,
-  reportDate: string,
   userId: number | undefined,
 ): Promise<void> {
   if (!userId) return sendUnauthorizedMessage();
@@ -160,10 +159,14 @@ export async function enqueueUsgsForReport(
     return sendUnauthorizedMessage();
   }
 
+  const location = await getLocation(existing.locationId);
+  if (!location?.usgsLocationId || !location.timezone) return;
+
   usgsQueue.add("fetch-usgs", {
-    postId: reportIdNum,
-    usgsLocationId,
-    reportDate,
+    locationId: existing.locationId,
+    usgsLocationId: location.usgsLocationId,
+    date: existing.date,
+    timezone: location.timezone,
   });
 }
 
