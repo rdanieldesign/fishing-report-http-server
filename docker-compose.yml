@@ -4,7 +4,7 @@ services:
     env_file: .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    command: node dist/scripts/migrate.js
+    command: sh -c "node dist/scripts/migrate.js && node dist/scripts/run-data-migrations.js"
 
   app:
     image: ghcr.io/rdanieldesign/fishing-report-http-server:latest

@@ -14,6 +14,10 @@ AWS_SECRET_ACCESS_KEY= # AWS IAM secret access key
 
 AWS credentials can be found in `~/.aws/credentials` on your local machine, or retrieved from the AWS IAM console. The IAM user needs `s3:GetObject`, `s3:PutObject`, and `s3:DeleteObject` permissions on the configured bucket.
 
+## Data Migrations
+
+One-off scripts that run automatically on deploy to backfill or transform existing data. See [src/data-migrations/README.md](src/data-migrations/README.md) for full instructions.
+
 ## Available Scripts
 
 - `npm run start` — Build and run the server

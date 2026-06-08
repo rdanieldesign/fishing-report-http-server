@@ -104,6 +104,11 @@ export const weatherDaily = mysqlTable(
   (table) => [unique("location_date_unique").on(table.locationId, table.date)],
 );
 
+export const dataMigrations = mysqlTable("data_migrations", {
+  name: varchar("name", { length: 255 }).primaryKey(),
+  appliedAt: timestamp("applied_at").defaultNow().notNull(),
+});
+
 export const schema = {
   users,
   locations,
@@ -112,4 +117,5 @@ export const schema = {
   friends,
   usgsReadings,
   weatherDaily,
+  dataMigrations,
 };
