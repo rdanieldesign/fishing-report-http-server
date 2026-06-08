@@ -38,6 +38,7 @@ export const locations = mysqlTable("locations", {
   name: varchar("name", { length: 255 }).notNull(),
   usgsLocationId: varchar("usgs_location_id", { length: 50 }),
   coordinates: point("coordinates"),
+  timezone: varchar("timezone", { length: 50 }),
 });
 
 export const reports = mysqlTable("reports", {

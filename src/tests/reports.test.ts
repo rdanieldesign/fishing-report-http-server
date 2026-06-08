@@ -181,6 +181,7 @@ describe("addReport service with async USGS queue", () => {
       name: "Test Lake",
       usgsLocationId: "usgs-12345",
       coordinates: { latitude: 40.7128, longitude: -74.006 },
+      timezone: null,
     });
 
     await reportsService.addReport({
@@ -206,6 +207,7 @@ describe("addReport service with async USGS queue", () => {
       name: "Unknown Lake",
       usgsLocationId: null,
       coordinates: { latitude: 40.7128, longitude: -74.006 },
+      timezone: null,
     });
 
     await reportsService.addReport({
@@ -245,6 +247,7 @@ describe("addReport service with async weather queue", () => {
       name: "Test Lake",
       usgsLocationId: null,
       coordinates: { latitude: 40.7128, longitude: -74.006 },
+      timezone: null,
     });
 
     await reportsService.addReport({
@@ -271,6 +274,7 @@ describe("addReport service with async weather queue", () => {
       name: "Unknown Lake",
       usgsLocationId: null,
       coordinates: null,
+      timezone: null,
     });
 
     await reportsService.addReport({

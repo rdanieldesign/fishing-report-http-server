@@ -18,6 +18,7 @@ describe("GET /api/locations", () => {
         name: "Avondale Lake",
         usgsLocationId: null,
         coordinates: { latitude: 40.7128, longitude: -74.006 },
+        timezone: null,
       },
     ]);
 
@@ -35,6 +36,7 @@ describe("GET /api/locations/:id", () => {
       name: "Avondale Lake",
       usgsLocationId: null,
       coordinates: { latitude: 40.7128, longitude: -74.006 },
+      timezone: null,
     });
 
     const res = await request(app).get("/api/locations/1");
@@ -57,8 +59,7 @@ describe("POST /api/locations", () => {
   it("returns 200 for a valid body", async () => {
     jest.spyOn(locationsRepo, "addLocation").mockResolvedValueOnce(1);
 
-    const res = await request(app)
-      .post("/api/locations")
+    const res = await request(app).post("/api/locations");
 
     expect(res.status).toBe(200);
   });

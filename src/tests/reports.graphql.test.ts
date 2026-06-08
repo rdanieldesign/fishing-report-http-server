@@ -54,6 +54,7 @@ const MOCK_DB_REPORT = {
     name: "Blue Creek",
     usgsLocationId: null,
     coordinates: { latitude: 40.7128, longitude: -74.006 },
+    timezone: null,
   },
 };
 
