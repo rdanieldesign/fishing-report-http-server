@@ -10,6 +10,7 @@ export const allRelations = defineRelations(schema, (r) => ({
   locations: {
     reports: r.many.reports(),
     weatherDaily: r.many.weatherDaily(),
+    usgsReadings: r.many.usgsReadings(),
   },
   weatherDaily: {
     location: r.one.locations({
@@ -27,7 +28,6 @@ export const allRelations = defineRelations(schema, (r) => ({
       from: r.reports.locationId,
       to: r.locations.id,
     }),
-    usgsReadings: r.many.usgsReadings(),
     reportImages: r.many.reportImages(),
   },
   reportImages: {
@@ -49,9 +49,9 @@ export const allRelations = defineRelations(schema, (r) => ({
     }),
   },
   usgsReadings: {
-    report: r.one.reports({
-      from: r.usgsReadings.postId,
-      to: r.reports.id,
+    location: r.one.locations({
+      from: r.usgsReadings.locationId,
+      to: r.locations.id,
     }),
   },
 }));

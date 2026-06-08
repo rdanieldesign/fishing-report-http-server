@@ -69,19 +69,38 @@ export const friends = mysqlTable("friends", {
   actionUserId: int("actionUserId").notNull(),
 });
 
-export const usgsReadings = mysqlTable("usgs_readings", {
-  id: varchar("id", { length: 100 }).primaryKey(),
-  postId: int("post_id", { unsigned: true })
-    .notNull()
-    .references(() => reports.id, { onDelete: "cascade" }),
-  parameterCode: varchar("parameter_code", { length: 10 }).notNull(),
-  computationIdentifier: varchar("computation_identifier", {
-    length: 100,
-  }).notNull(),
-  parameterName: varchar("parameter_name", { length: 100 }).notNull(),
-  value: decimal("value", { precision: 12, scale: 3 }).notNull(),
-  unit: varchar("unit", { length: 20 }).notNull(),
-});
+export const usgsReadings = mysqlTable(
+  "usgs_readings",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    locationId: int("location_id", { unsigned: true })
+      .notNull()
+      .references(() => locations.id, { onDelete: "cascade" }),
+    recordedAt: timestamp("recorded_at").notNull(),
+    timeSlot: mysqlEnum("time_slot", [
+      "midnight",
+      "early_morning",
+      "morning",
+      "noon",
+      "afternoon",
+      "evening",
+    ]).notNull(),
+    parameterCode: varchar("parameter_code", { length: 10 }).notNull(),
+    computationIdentifier: varchar("computation_identifier", {
+      length: 100,
+    }).notNull(),
+    parameterName: varchar("parameter_name", { length: 100 }).notNull(),
+    value: decimal("value", { precision: 12, scale: 3 }).notNull(),
+    unit: varchar("unit", { length: 20 }).notNull(),
+  },
+  (table) => [
+    unique("location_recorded_parameter_unique").on(
+      table.locationId,
+      table.recordedAt,
+      table.parameterCode,
+    ),
+  ],
+);
 
 export const weatherDaily = mysqlTable(
   "weather_daily",
